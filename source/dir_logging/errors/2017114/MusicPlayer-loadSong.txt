@@ -1,0 +1,2 @@
+2017-11-04 20:30:30.449637 path [C:\Users\Robert\Desktop\repositories\GameDev\PythonGameDevelopment\swordFightProto\dir_sound\dir_music\saga7-Wind.mp3] not found
+2017-11-04 20:31:50.743897 path [C:\Users\Robert\Desktop\repositories\GameDev\PythonGameDevelopment\swordFightProto\dir_sound\dir_music\saga7-Wind.mp3] not found

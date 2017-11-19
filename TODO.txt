@@ -1,0 +1,92 @@
+PROJECT CharmQuark 
+
+debug:
+right click a tile and be able to change its tilemap index?
+
+general todo
+Documentation Documentation Documentation
+remove deprecated code
+all size variables named including pixel or tile ("<var>_px" or "<var>_tile")
+cleanup all warnings in PyCharm
+metrics: timeit to measure speed of render all vs render changed
+	other metrics?
+
+buttomap
+	the button map should reference the actual keys, which get mapped to specific behaviors
+
+BUG:
+default action trying to access depcrecated levelLayout Object
+
+Need to decide if (height, width) or (width, height)
+probably should do (height, width) since that is === to (rows, columns), but be consitent
+
+should gameCamera just be in renderer?
+	cleanup camera references
+
+DATA AND PARAMS:
+Load the Params as a Game object from DB
+
+SOFTWARE DESIGN
+use packages to organize modules?
+Write down algorithm for rendering scenery somewhere!
+In Panorama render: Var Names - need better names for each variable.  Can some of the calculations be optimized?  
+Should the camera tile and offset be class fields for Renderer? 
+sound logging/error checking is overboard, proably don't need now that things are working well.  
+  (Assume the API is correctly used by the programmer, and trust to the unit tests?) 
+
+RENDER
+store layout and tile maps as class fields in Renderer (updated on a load level)
+make renderLevel (render menu, cutscene, etc) their own methods.  Set the game.render method
+on a load (removes a branch from render, cleans up code)
+
+TESTING:
+Render changed may have bugs not uncovered (like the overshoot/negative bug).  investigate
+Put print statements in loops to ensure not rendering more than necessary panoramas or tiles
+Experiment with smaller screen size, number of layers, etc. for speed/performance. 
+Need to eventually figure out better unit testing
+
+OPTIMIZATION
+PRAMS all integers not strings
+from time time() method can be used to test certain modules for speed
+	(NUMPY does not appear faster in basic list iteration)
+can have pygame only get() relevant (chosen) events from the queue
+Double Buffering?
+Get rid of tyiple quotes ''' as these are strings not comments
+For the EventHandler dictionary, use a tuple and index into it by int (not a dict with string) 
+SPEED TESTS:
+Passing a variable vs using the self. reference
+
+
+ACTORS
+Render an actor if onscreen only
+Render all actors should include the actors and the scenery images to render.  These must be sorted on Y position to get proper layering when rendering
+	will need to think of a good way to sort these optimally, or will impact performance
+
+TOOLS
+GIMP - learn mainly for transparency effect, then try to put in with transparency to pygame
+
+ANIMATION
+Panoramas
+Tiles
+Actors
+
+HUD
+Need a hud
+Menus
+Text Boxes (pygame tutorial has something on this)
+
+FEATURES
+need a debug window that can edit game params.  This may require a restructering of game objects 
+	(game class needs to contain everything to allow references from outside to see changes) 
+
+EVENTS
+on a load level event, need to flush the event queue to prefent incorrect events from running
+create an event type EventList which adds a list of events to the queue
+create an event type flush queue which removes any remaining events from the queue (fix the menu bug when transitioning)
+how to change tiles based on events (e.g. pull a switch to open a door)
+how to have events spaced out over frames, or timed?
+-NPC's and objects which can be interacted with
+-how to repeate an ambiant track?
+
+
+PANORAMA
