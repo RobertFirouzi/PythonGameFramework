@@ -1,5 +1,7 @@
 PROJECT CharmQuark 
 
+all paths should be relative so that project can be moved between locations or computers
+
 debug:
 right click a tile and be able to change its tilemap index?
 
