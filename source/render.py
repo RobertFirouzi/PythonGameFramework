@@ -1,22 +1,8 @@
-'''
-Created on Feb 25, 2017
-
-@author: Robert
-'''
-
 from actors import SimpleBox
-from scenery import StaticSprite, SolidBackground, SceneryWrapper
-import utility as UTIL
 import pygame
-from game_level import GameLevel
 import parameters as PRAM
-from parameters import BOX_FUDGE
 
-'''
-Class which renders images to the screen
-@param screen
-'''
-class Renderer():
+class Renderer:
     def __init__(self, screen):
         self.screen = screen
         
@@ -32,7 +18,8 @@ class Renderer():
         self.backgrounds = []
         self.foregrounds = []
         self.actors = []
-        
+        self.actorDict = None
+
         #for rendering changed tiles, keeps track of rendered tiles
         #indexed by their (x,y) coordinate pair
         self.renderedLowerTiles = {} 
@@ -51,17 +38,13 @@ class Renderer():
         self.backgrounds = levelData.backgrounds
         self.foregrounds = levelData.foregrounds
         self.actors = levelData.actors
-        
+
+        #TODO setup data structure for actors
         self.actorDict = {} #Load actor images
-        for actor in self.actors:
-            if type(actor) is StaticSprite: #TODO this will be type Sprite or similar
-                if self.actorDict.get(actor.image) == None:
-                    self.actorDict[actor.image] = pygame.image.load(actor.path+actor.image).convert_alpha()
-        
-#         for sprite in scenery: #MAY NOT USE SCENERY
-#             if type(sprite) is StaticSprite:
-#                 if imageDict.get(sprite.image) == None:
-#                     imageDict[sprite.image] = pygame.image.load(sprite.path+sprite.image).convert()
+        # for actor in self.actors:
+        #     if type(actor) is StaticSprite: #TODO this will be type Sprite or similar
+        #         if self.actorDict.get(actor.image) == None:
+        #             self.actorDict[actor.image] = pygame.image.load(actor.path+actor.image).convert_alpha()
 
         for background in self.backgrounds:
             self.loadPanorama(background)
@@ -72,27 +55,14 @@ class Renderer():
         self.lowerTileMap = self.loadTilemap(levelData.lowerTileMap.filePath)
         self.upperTileMap = self.loadTilemap(levelData.upperTileMap.filePath)
 
-    def loadTilemap(self, filePath):
-        return pygame.image.load(filePath).convert()
-
-    def loadPanorama(self, panorama):
-        if panorama.alpha == True:
-            panorama.image = pygame.image.load(panorama.filePath).convert_alpha()
-        else:
-            panorama.image = pygame.image.load(panorama.filePath).convert()
-
     #this will just render game levels - create a seperate method for menus, and perhaps cutscenes
     def render(self):
-#         self.cameraTile = gameScene.gameCamera.getTile()
-#         self.cameraOffset = gameScene.gameCamera.getOffset()
-#         self.cameraPosition = gameScene.gameCamera.getPosition()
-#         moveFlag = gameScene.gameCamera.moveFlag
         self.cameraTile= self.camera.tile
         self.cameraOffset = self.camera.offset
         self.cameraPosition = self.camera.position
 
         if len(self.lowerTiles)>0: #quick hack to make sure a level is loaded
-            if self.camera.moveFlag == True:
+            if self.camera.moveFlag:
                 self.renderAllPanorama(BG = True)
                 self.renderAllLowerTile()
                 self.renderAllActors()
@@ -109,7 +79,6 @@ class Renderer():
             self.renderedUpperTiles.clear()
             self.camera.moveFlag = False       
 
-#     def renderAllLowerTile(self, layoutWrapper, tileOffset, pixelOffset):
     def renderAllLowerTile(self):
         for y in range(PRAM.DISPLAY_TILE_HEIGHT):
             yOffset = y * PRAM.TILESIZE - self.cameraOffset[1]
@@ -123,8 +92,7 @@ class Renderer():
                                       tile[1], #tileMap y crop position
                                      PRAM.TILESIZE, #tilemap  width
                                      PRAM.TILESIZE)) #tilemap height
-                    
-#     def renderAllUpperTile(self, layoutWrapper, tileOffset, pixelOffset):
+
     def renderAllUpperTile(self):
         for y in range(PRAM.DISPLAY_TILE_HEIGHT):
             yOffset = y * PRAM.TILESIZE - self.cameraOffset[1]
@@ -156,7 +124,6 @@ class Renderer():
                                          PRAM.TILESIZE)) #blit one tile
                         self.renderedLowerTiles[(y,x)] = True
 
-#     def renderChangedUpperTile(self, renderQueue, layoutWrapper, tileOffset, pixelOffset):
     def renderChangedUpperTile(self):
         for box in self.renderQueue:
             xRange = (box[0]//PRAM.TILESIZE, box[1]//PRAM.TILESIZE)
@@ -250,7 +217,6 @@ class Renderer():
                         else:
                             keepGoing = False #you have blitted the entire visible section
 
-#     def renderChangedPanorama(self, renderQueue, images, imageDict, tileOffset, pixelOffset):
     def renderChangedPanorama(self, BG = True):
         if BG:
             images = self.backgrounds
@@ -347,7 +313,7 @@ class Renderer():
 #     def renderChangedActors(self, actorsWrapper):
     def renderChangedActors(self):
         for actor in self.actors:
-            if actor.changed == True:
+            if actor.changed:
                 if type(actor) is SimpleBox:
                     pygame.draw.rect(self.screen, actor.color, 
                                      pygame.Rect(actor.position[0]+PRAM.BOX_FUDGE - self.cameraPosition[0], 
@@ -357,30 +323,9 @@ class Renderer():
                 actor.changed = False
         return
 
-#TODO - scenery should be part of actors?                  
-#     '''
-#     Render all scenery
-#     @param sceneryWrapper
-#     '''
-#     def renderScenery(self, sceneryWrapper):
-#         for feature in sceneryWrapper.scenery:
-#             if type(feature) is SolidBackground:
-#                 self.screen.fill(feature.color)
-#                 
-#             elif type(feature) is StaticSprite:
-#                 self.screen.blit(sceneryWrapper.imageDict[feature.image], feature.location)
-#                 
-#             elif type(feature) is SimpleBox:
-#                 pygame.draw.rect(self.screen, feature.color, 
-#                                  pygame.Rect(feature.position[0], feature.position[1], 
-#                                              feature.size[0], feature.size[1]))                
-#         return
-    
-        '''
-    Based on start and end position, and actor size, add a bounding box to the 
-        renderQueue (in pixels) for a section of the gameLevel that needs to be
-        rendered on the render changes call 
-    '''
+    #Based on start and end position, and actor size, add a bounding box to the
+    #renderQueue (in pixels) for a section of the gameLevel that needs to be
+    #rendered on the render changes call
     def addRenderBox(self, size, origin, destination, direction):
         if direction == PRAM.UP:
             minx = origin[0]
@@ -417,11 +362,18 @@ class Renderer():
         if miny<0:
             miny = 0
         if maxx > mapSizeX:
-            maxx = mapSizeX 
+            maxx = mapSizeX
         if maxy > mapSizeY:
-            maxy = mapSizeY            
-                
+            maxy = mapSizeY
+
         self.renderQueue.append((minx, maxx, miny, maxy))
-    
-    
-    
+
+    #Can't be static method, debugger calls through the render object
+    def loadTilemap(self, filePath):
+        return pygame.image.load(filePath).convert()
+
+    def loadPanorama(self, panorama):
+        if panorama.alpha == True:
+            panorama.image = pygame.image.load(panorama.filePath).convert_alpha()
+        else:
+            panorama.image = pygame.image.load(panorama.filePath).convert()

@@ -5,12 +5,8 @@ import createDatabase as DB # @UndefinedVariable
 import pickle
 import random
 
-'''
-This will create a simple practice level
-blank border, with trees intersperced
-
-'''
-
+# This will create a simple practice level
+# blank border, with trees intersperced
 FILENAME = 'Level_test_6'
 WIDTH = 150
 HEIGHT = 150

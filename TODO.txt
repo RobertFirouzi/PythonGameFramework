@@ -1,15 +1,11 @@
 PROJECT CharmQuark 
 
-all paths should be relative so that project can be moved between locations or computers
-
 debug:
 right click a tile and be able to change its tilemap index?
 
 general todo
 Documentation Documentation Documentation
-remove deprecated code
 all size variables named including pixel or tile ("<var>_px" or "<var>_tile")
-cleanup all warnings in PyCharm
 metrics: timeit to measure speed of render all vs render changed
 	other metrics?
 
@@ -25,9 +21,6 @@ probably should do (height, width) since that is === to (rows, columns), but be 
 should gameCamera just be in renderer?
 	cleanup camera references
 
-DATA AND PARAMS:
-Load the Params as a Game object from DB
-
 SOFTWARE DESIGN
 use packages to organize modules?
 Write down algorithm for rendering scenery somewhere!
@@ -37,7 +30,6 @@ sound logging/error checking is overboard, proably don't need now that things ar
   (Assume the API is correctly used by the programmer, and trust to the unit tests?) 
 
 RENDER
-store layout and tile maps as class fields in Renderer (updated on a load level)
 make renderLevel (render menu, cutscene, etc) their own methods.  Set the game.render method
 on a load (removes a branch from render, cleans up code)
 
@@ -53,11 +45,9 @@ from time time() method can be used to test certain modules for speed
 	(NUMPY does not appear faster in basic list iteration)
 can have pygame only get() relevant (chosen) events from the queue
 Double Buffering?
-Get rid of tyiple quotes ''' as these are strings not comments
 For the EventHandler dictionary, use a tuple and index into it by int (not a dict with string) 
 SPEED TESTS:
 Passing a variable vs using the self. reference
-
 
 ACTORS
 Render an actor if onscreen only
@@ -76,10 +66,6 @@ HUD
 Need a hud
 Menus
 Text Boxes (pygame tutorial has something on this)
-
-FEATURES
-need a debug window that can edit game params.  This may require a restructering of game objects 
-	(game class needs to contain everything to allow references from outside to see changes) 
 
 EVENTS
 on a load level event, need to flush the event queue to prefent incorrect events from running

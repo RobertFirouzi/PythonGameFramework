@@ -1,8 +1,3 @@
-'''
-Created on Mar 1, 2017
-
-@author: Robert
-'''
 from sound import MusicPlayer, SoundEffectPlayer, SoundWrapper
 from player_character import PlayerCharacter
 from actions import ActionColorSwap, ActionMove
@@ -10,10 +5,8 @@ from actors import SimpleBox
 from event import EventHandler
 import parameters as PRAM
 
-'''
-Generates the sound and music players, and loads the entire soundtrack into
-    the dictionaries of each
-'''
+# Generates the sound and music players, and loads the entire soundtrack into
+#     the dictionaries of each
 def soundPlayerFactory():
     musicPlayer = MusicPlayer()
     soundPlayer = SoundEffectPlayer()
@@ -25,11 +18,9 @@ def soundPlayerFactory():
         soundPlayer.loadSound(SoundWrapper('sound', PRAM.AMBIANCE_PATH, ambience, '.wav'))        
     return musicPlayer, soundPlayer
 
-'''
-Initialize the player character and create the starting actions.  May not start
-with an actor initialized
-@param actor
-'''
+# Initialize the player character and create the starting actions.  May not start
+# with an actor initialized
+# @param actor
 def playerFactory(actor=None):
     player = PlayerCharacter(actor)
     player.actor=SimpleBox()
@@ -42,7 +33,7 @@ def playerFactory(actor=None):
 
     
 def eventHandlerFactory(game):
-    eventHandler = EventHandler(game)
+    eventHandler = EventHandler(game, {})
     eventHandler.eventDict.update({
      'MOVE' : eventHandler.runMove,
      'DEFAULTACTION' : eventHandler.runDefaultAction,

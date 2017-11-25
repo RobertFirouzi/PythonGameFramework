@@ -11,8 +11,9 @@ from render import Renderer
 from game import Game
 from input import InputHandler, ButtonMap
 from camera import GameCamera
+
 ### SETUP ###
-pygame.init()  # @UndefinedVariable
+pygame.init()
 screen = pygame.display.set_mode((PRAM.DISPLAY_WIDTH, PRAM.DISPLAY_HEIGHT))
 CLOCK = pygame.time.Clock() 
 DONE = False
@@ -33,9 +34,9 @@ renderer.camera = gameCamera
 game.gameStartup()
 while not DONE:
         for event in pygame.event.get():         
-            if event.type == pygame.QUIT:  # @UndefinedVariable
+            if event.type == pygame.QUIT:
                 DONE = True #TODO make this an input that creates a quit event?
-            if event.type == pygame.KEYDOWN: # @UndefinedVariable 
+            if event.type == pygame.KEYDOWN:
                 game.keydownEvents.append(event)
             if event.type == pygame.MOUSEBUTTONDOWN:
                 game.keydownEvents.append(event)
@@ -56,7 +57,7 @@ while not DONE:
             game.runDebugLoop() #if debug is activated ented debug mode
 
         pygame.display.flip()
-        CLOCK.tick(55) #55 FPS
+        CLOCK.tick(60) #60 FPS
 
 #this will only run if the module is run as the main module, not if imported.
 if __name__ == '__main__':

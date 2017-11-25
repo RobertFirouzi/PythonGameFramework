@@ -1,27 +1,7 @@
-'''
-Created on Mar 5, 2017
-
-@author: Robert
-'''
 from event import EventLoadLevel, EventLoadMenu, EventDefaultAction
-
-'''
-Class to store the type of input received (keydown, presseed, mousemove, etc) and
-    the input trigger (arrow key, letter, mouse click...)
-'''
-
 import parameters as PRAM
 
-'''
-Class defines which keys are mapped to which actions (allows for changing buttons during
-    game play dynamically i.e. controller config)
-@param up
-@param down
-@param left
-@param right
-@param default
-'''
-class ButtonMap():
+class ButtonMap:
     def __init__(self, 
                  up = PRAM.INPUT_UP, 
                  down = PRAM.INPUT_DOWN, 
@@ -39,19 +19,22 @@ class ButtonMap():
         self.status = status
         self.enterDebug = enterDebug
 
-'''
-Class has the behaviors of each input dynamically assigned and processes input
-each frame
-@param game
-@param player
-@param buttonMap
-'''
-class InputHandler():
+class InputHandler:
     def __init__(self, game = None, player = None, buttonMap = None, inputType = PRAM.INPTYPE_OBSERVER):
         self.game = game
         self.player = player
         self.buttonMap = buttonMap
-        
+
+        self.inputUpBehavior = None
+        self.inputDownBehavior = None
+        self.inputLeftBehavior = None
+        self.inputRightBehavior = None
+        self.inputActionBehavior = None
+        self.inputCancelBehavior = None
+        self.inputStatusBehavior = None
+        self.leftClickBehavior = None
+        self.enterDebugBehavior = None
+
         self.setInputBehavior(inputType)
       
     def handleInputs(self):
@@ -90,7 +73,7 @@ class InputHandler():
             self.inputActionBehavior = self.doNothing
             self.inputCancelBehavior = self.doNothing
             self.inputStatusBehavior = self.doNothing
-            self.leftClickBehavior = self.printPixelPosition
+            self.leftClickBehavior = printPixelPosition
 
         elif inputType == PRAM.INPTYPE_MENU:
             self.inputUpBehavior = self.menuUp
@@ -100,7 +83,7 @@ class InputHandler():
             self.inputActionBehavior = self.menuAction 
             self.inputCancelBehavior = self.menuCancel
             self.inputStatusBehavior = self.doNothing
-            self.leftClickBehavior = self.printPixelPosition
+            self.leftClickBehavior = printPixelPosition
 
         elif inputType == PRAM.INPTYPE_NORMAL:        
             self.inputUpBehavior = self.movementUp
@@ -111,50 +94,49 @@ class InputHandler():
             self.inputCancelBehavior = self.doNothing
             self.inputStatusBehavior = self.statusAction
             self.enterDebugBehavior = self.startDebug
-            self.leftClickBehavior = self.printPixelPosition
-                        
-#TODO - should dirrectional events return an event for the queue?    
-    def movementUp(self, args=''):
+            self.leftClickBehavior = printPixelPosition
+
+    def movementUp(self):
         self.game.addEvent(self.player.actionMove(PRAM.UP))
         
-    def movementDown(self, args=''):
+    def movementDown(self):
         self.game.addEvent(self.player.actionMove(PRAM.DOWN))
     
-    def movementLeft(self, args=''):
+    def movementLeft(self):
         self.game.addEvent(self.player.actionMove(PRAM.LEFT))
     
-    def movementRight(self, args=''):
+    def movementRight(self):
         self.game.addEvent(self.player.actionMove(PRAM.RIGHT))
     
-    def defaultAction(self, args=''):
+    def defaultAction(self):
         self.game.addEvent(EventDefaultAction(self.player)) #'default behavior'
     
-    def statusAction(self, args=''):
+    def statusAction(self):
         self.game.addEvent(EventLoadMenu(PRAM.MENU_TEST1)) #TODO temp code to test menu/level load       
     
-    def menuUp(self, args=''):
+    def menuUp(self):
         pass
 
-    def menuDown(self, args=''):
+    def menuDown(self):
         pass
 
-    def menuLeft(self, args=''):
+    def menuLeft(self):
         pass
     
-    def menuRight(self, args=''):
+    def menuRight(self):
         pass
 
-    def menuAction(self, args=''):
+    def menuAction(self):
         self.game.addEvent(EventLoadLevel(3, [250,350])) #TODO temp code to test menu/level load
     
-    def menuCancel(self, args=''):
+    def menuCancel(self):
         pass
    
-    def doNothing(self, args=''):
+    def doNothing(self):
         pass
 
-    def printPixelPosition(self, args=''):
-        print('('+str(args[0])+','+str(args[1])+')') #prints the coordinates of the mouse click
-
-    def startDebug(self, args=''):
+    def startDebug(self):
         self.game.runDebug = True
+
+def printPixelPosition(args):
+    print('('+str(args[0])+','+str(args[1])+')') #prints the coordinates of the mouse click

@@ -1,13 +1,8 @@
-'''
-Created on Mar 12, 2017
-
-@author: Robert
-'''
 import utility as UTIL
 import parameters as PRAM
 
-class GameCamera():
-    def __init__(self, position = [0,0], tile = [0,0], offset = [0,0], maxPosition = [0,0]):
+class GameCamera:
+    def __init__(self, position = (0,0), tile = (0,0), offset = (0,0), maxPosition = (0,0)):
         self.position = position #absolute pixel position of the top left corner of camera
         self.tile = tile #tile position of top left corner of camera
         self.offset = offset  #pixels that camera is offset from the boundry of the tile
@@ -24,7 +19,7 @@ class GameCamera():
     def getOffset(self):
         return self.offset    
         
-    def setPosition(self, position = [0,0]):
+    def setPosition(self, position = (0,0)):
         self.position = position
         if self.position[0] < 0:
             self.position[0] = 0

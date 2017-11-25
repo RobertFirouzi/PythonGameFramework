@@ -96,7 +96,7 @@ class DebugLooper(threading.Thread):
         keepGoing = True
         try:
             while keepGoing:
-                devInput = self.getInput(DEBUG_MENU, INT, [QUIT,TILEMAP])
+                devInput = getInput(DEBUG_MENU, INT, [QUIT,TILEMAP])
                 if devInput == EXIT_DEBUGGER:
                     keepGoing = False
                 elif devInput == QUIT:
@@ -106,14 +106,13 @@ class DebugLooper(threading.Thread):
                 elif devInput == SCENERY:
                     result = self.changeScenery()
                 elif devInput == TILEMAP:
-                    result = self.changeTilemap()
+                    result = self.changeTilemap
                 if result == EXIT_DEBUGGER:
                     keepGoing = False
 
         except Exception as e:
             print('debug loop failed with exception')
             print(e)
-            self.debug=False
 
         print('Exiting Debugger...')
 
@@ -121,7 +120,7 @@ class DebugLooper(threading.Thread):
         keepGoing = True
         result = 0
         while keepGoing:
-            devInput = self.getInput(SCENERY_MENU, INT, [QUIT,FOREGROUND])
+            devInput = getInput(SCENERY_MENU, INT, [QUIT,FOREGROUND])
             if devInput == QUIT:
                 keepGoing = False
             elif devInput == EXIT_DEBUGGER:
@@ -134,11 +133,12 @@ class DebugLooper(threading.Thread):
             if result == EXIT_DEBUGGER:
                 return EXIT_DEBUGGER
 
+    @property
     def changeTilemap(self):
         keepGoing = True
 
         while keepGoing:
-            devInput = self.getInput(TILEMAP_MENU, INT, [QUIT,BARRIER])
+            devInput = getInput(TILEMAP_MENU, INT, [QUIT,BARRIER])
             if devInput == QUIT:
                 keepGoing = False
             elif devInput == EXIT_DEBUGGER:
@@ -151,7 +151,7 @@ class DebugLooper(threading.Thread):
                 print('edit barrier')
 
     def changePlayerSpeed(self):
-        devInput = self.getInput(MOVESPEED_MENU, INT, [MIN_MOVE_SPEED,MAX_MOVE_SPEED])
+        devInput = getInput(MOVESPEED_MENU, INT, [MIN_MOVE_SPEED,MAX_MOVE_SPEED])
         if devInput == EXIT_DEBUGGER:
             return EXIT_DEBUGGER
         self.game.player.moveSpeed = devInput
@@ -172,7 +172,7 @@ class DebugLooper(threading.Thread):
         for panorama in scenery:
             print(str(i+1) + ': ' + str(panorama.filePath))
             i+=1
-        devInput = self.getInput(PANORAMA_PROMPT, INT, [QUIT,i])
+        devInput = getInput(PANORAMA_PROMPT, INT, [QUIT,i])
         if devInput == QUIT:
             return 0
         if devInput == EXIT_DEBUGGER:
@@ -181,7 +181,7 @@ class DebugLooper(threading.Thread):
         index = devInput -1 #index into array of scenery objects to edit
         keepGoing = True
         while keepGoing:
-            devInput = self.getInput(SCENERY_EDIT_MENU, INT, [QUIT, LAYER])
+            devInput = getInput(SCENERY_EDIT_MENU, INT, [QUIT, LAYER])
             if devInput == QUIT:
                 keepGoing = False
 
@@ -189,7 +189,7 @@ class DebugLooper(threading.Thread):
                 return EXIT_DEBUGGER
 
             elif devInput == FILEPATH: #Change the image
-                devInput = self.getInput(GET_FILEPATH, STRING,[2,1000])
+                devInput = getInput(GET_FILEPATH, STRING,[2,1000])
                 allowedType = False
                 for imageType in ALLOWED_IMAGETYPES:
                     if imageType in devInput:
@@ -204,7 +204,7 @@ class DebugLooper(threading.Thread):
                     print('That is not an allowed image type in pygame')
 
             elif devInput == VISIBILE_SECTIONS:
-                devInput = self.getInput(VISIBILE_MENU, INT, [QUIT, ADD_VISIBILITY])
+                devInput = getInput(VISIBILE_MENU, INT, [QUIT, ADD_VISIBILITY])
                 print('Current Visibility:')
                 count = 0
                 for visibleSection in scenery[index].visibleSections:
@@ -216,7 +216,7 @@ class DebugLooper(threading.Thread):
                     return EXIT_DEBUGGER
                 elif devInput == DELETE_VISIBILITY:
                     print('Delete which visible section?')
-                    devInput = self.getInput('>>>', INT, [1, count])
+                    devInput = getInput('>>>', INT, [1, count])
                     scenery[index].visibleSections = list(scenery[index].visibleSections)
                     del(scenery[index].visibleSections[devInput-1])
                     scenery[index].visibleSections = tuple(scenery[index].visibleSections)
@@ -224,7 +224,7 @@ class DebugLooper(threading.Thread):
                     print('Enter ints for the 4 values')
                     newVisibility = ['xmin', 'xmax', 'ymin', 'ymax']  # placeholders tags
                     for i in range(4):
-                        newVisibility[i] = self.getInput('Value for ' + newVisibility[i] + '\n>>>', INT, [-500000, 500000])
+                        newVisibility[i] = getInput('Value for ' + newVisibility[i] + '\n>>>', INT, [-500000, 500000])
                     scenery[index].visibleSections = list(scenery[index].visibleSections)
                     scenery[index].visibleSections.append(newVisibility)
                     scenery[index].visibleSections = tuple(scenery[index].visibleSections)
@@ -234,7 +234,7 @@ class DebugLooper(threading.Thread):
                 scrolling = [['xmult', 'xdiv'],['ymult','ydiv']] #placeholders tags
                 for i in range(2):
                     for j in range(2):
-                        scrolling[i][j] = self.getInput('Value for ' + scrolling[i][j]+'\n>>>',
+                        scrolling[i][j] = getInput('Value for ' + scrolling[i][j]+'\n>>>',
                                                         INT, [-10000, 10000])
                 scenery[index].scrolling = scrolling
 
@@ -248,42 +248,47 @@ class DebugLooper(threading.Thread):
 
         return 0
 
-    #get a user input type within a range, loop until propper input recieved.  Always return QUIT or EXIT values
-    def getInput(self, prompt, dataType=INT, range=(-10000,10000)):
-        if dataType == INT:
-            devInput = ''
-            while type(devInput) != int or devInput < range[0] or devInput > range[1]:
-                try:
-                    devInput = int(input(prompt))
-                except Exception as e:
-                    print('Exception, caught on user input')
-                    print(e)
-                if devInput == QUIT or devInput == EXIT_DEBUGGER:
-                    return devInput
-        elif dataType == STRING:
-            devInput = 0
-            while type(devInput) != str or len(devInput) < range[0] or len(devInput) > range[1]:
-                try:
-                    devInput = str(input(prompt))
-                except Exception as e:
-                    print('Exception, caught on user input')
-                    print(e)
 
-                if devInput == EXIT_DEBUGGER_STR:
-                    return EXIT_DEBUGGER
-        elif dataType == FLOAT:
-            devInput = ''
-            while type(devInput) != float or devInput < range[0] or devInput > range[1]:
-                try:
-                    devInput = float(input(prompt))
-                except Exception as e:
-                    print('Exception, caught on user input')
-                    print(e)
+### STATIC METHODS ###
 
-                if devInput == float(QUIT) or devInput == float(EXIT_DEBUGGER):
-                    return int(devInput)
+#get a user input type within a range, loop until propper input recieved.  Always return QUIT or EXIT values
+def getInput(prompt, dataType=INT, inputRange=(-10000,10000)):
+    if dataType == INT:
+        devInput = ''
+        while type(devInput) != int or devInput < inputRange[0] or devInput > inputRange[1]:
+            try:
+                devInput = int(input(prompt))
+            except Exception as e:
+                print('Exception, caught on user input')
+                print(e)
+            if devInput == QUIT or devInput == EXIT_DEBUGGER:
+                return devInput
+    elif dataType == STRING:
+        devInput = 0
+        while type(devInput) != str or len(devInput) < inputRange[0] or len(devInput) > inputRange[1]:
+            try:
+                devInput = str(input(prompt))
+            except Exception as e:
+                print('Exception, caught on user input')
+                print(e)
 
-        return devInput
+            if devInput == EXIT_DEBUGGER_STR:
+                return EXIT_DEBUGGER
+    elif dataType == FLOAT:
+        devInput = ''
+        while type(devInput) != float or devInput < inputRange[0] or devInput > inputRange[1]:
+            try:
+                devInput = float(input(prompt))
+            except Exception as e:
+                print('Exception, caught on user input')
+                print(e)
+
+            if devInput == float(QUIT) or devInput == float(EXIT_DEBUGGER):
+                return int(devInput)
+    else:
+        devInput = 0
+
+    return devInput
 
 
 

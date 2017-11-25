@@ -1,10 +1,8 @@
 import sqlite3 as DATABASE#using sqlite database
-
-DB_LOCATION = 'C:\\Users\\Robert\\Desktop\\repositories\\GameDev\\PythonGameDevelopment\\swordFightProto\\dir_database\\db_CharmQuark.sqlite'
+DB_LOCATION = 'dir_database\\db_CharmQuark.sqlite'
 
 
 ### CONNECT TO DB ###
-
 def queryDB(conn, query):
     return conn.execute(query)
 
@@ -14,8 +12,8 @@ def commitDB(conn):
 def closeDB(conn):
     conn.close()
 
-def openDB(DB_LOCATION):
-    conn = DATABASE.connect(DB_LOCATION)
+def openDB(db_location = DB_LOCATION):
+    conn = DATABASE.connect(db_location)
     return conn
 
 ### GET DATA ### 
@@ -37,7 +35,7 @@ def getTileMaps(key):
     query = "SELECT * FROM TileMaps WHERE level_key = {}".format(key)
     conn = openDB(DB_LOCATION)
     cursor = queryDB(conn, query)
-    tilemaps = []
+    tilemaps = list()
     tilemaps.append(cursor.fetchone()) #using primary key means only 1 result should return
     tilemaps.append(cursor.fetchone())
     closeDB(conn)
@@ -72,7 +70,7 @@ def getForegrounds(key):
 ### INSERT DATA ###
 
 def putLevelData(levelData):
-    pass
+    print(levelData) #TODO
 
 
 if __name__ == '__main__':
