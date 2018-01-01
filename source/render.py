@@ -2,6 +2,8 @@ from actors import SimpleBox
 import pygame
 import parameters as PRAM
 
+from time import time
+
 class Renderer:
     def __init__(self, screen):
         self.screen = screen
@@ -33,6 +35,8 @@ class Renderer:
 
         self.framecount = 0 #a running count of frame ticks to animate images
 
+        self.renderAllTimes = [] #TODO debud code for metrics
+
     def loadAssets(self, levelData):
         self.framecount = 0 #reset framecount
         self.levelData = levelData #TODO may not need this reference
@@ -49,19 +53,25 @@ class Renderer:
         #         if self.actorDict.get(actor.image) == None:
         #             self.actorDict[actor.image] = pygame.image.load(actor.path+actor.image).convert_alpha()
 
+        self.animatedPanorama = False #if this is true, must always re-render entire screen every frame
+
         for background in self.backgrounds:
             self.loadPanorama(background)
             if background.isMotion_X:
                 background.motion_x_multiplier = background.motionX_pxs/PRAM.GAME_FPS
+                self.animatedPanorama = True
             if background.isMotion_Y:
                 background.motion_y_multiplier = background.motionY_pxs/PRAM.GAME_FPS
+                self.animatedPanorama = True
 
         for foreground in self.foregrounds:
             self.loadPanorama(foreground)
             if foreground.isMotion_X:
                 foreground.motion_x_multiplier = foreground.motionX_pxs/PRAM.GAME_FPS
+                self.animatedPanorama = True
             if foreground.isMotion_Y:
                 foreground.motion_y_multiplier = foreground.motionY_pxs/PRAM.GAME_FPS
+                self.animatedPanorama = True
 
         self.lowerTileMap = self.loadTilemap(levelData.lowerTileMap.filePath)
         self.upperTileMap = self.loadTilemap(levelData.upperTileMap.filePath)
@@ -73,12 +83,18 @@ class Renderer:
         self.cameraPosition = self.camera.position
 
         if len(self.lowerTiles)>0: #quick hack to make sure a level is loaded
-            if self.camera.moveFlag or True:
+            if self.camera.moveFlag or self.animatedPanorama:
+                strartime = time() #TODO debug
+
                 self.renderAllPanorama(BG = True)
                 self.renderAllLowerTile()
                 self.renderAllActors()
                 self.renderAllUpperTile()                
-                self.renderAllPanorama(BG = False)                                
+                self.renderAllPanorama(BG = False)
+
+                self.renderAllTimes.append(time()-strartime) #TODO debug
+                if len(self.renderAllTimes)>100:
+                    self.averageRenderAllTime()
             else:
                 self.renderChangedPanorama(BG = True)
                 self.renderChangedLowerTile()                
@@ -91,6 +107,7 @@ class Renderer:
             self.camera.moveFlag = False
 
         self.framecount+=1
+
 
     def renderAllLowerTile(self):
         for y in range(PRAM.DISPLAY_TILE_HEIGHT):
@@ -161,19 +178,20 @@ class Renderer:
             images = self.backgrounds
         else:
             images = self.foregrounds
+
         for fg in images:
             if fg.isMotion_X:
-                motion_x_offset_px = fg.motion_x_multiplier * self.framecount
+                motion_x_offset_px = int(fg.motion_x_multiplier * self.framecount)
             else:
                 motion_x_offset_px = 0
 
             if fg.isMotion_Y:
-                motion_y_offset_px = fg.motion_y_multiplier * self.framecount
+                motion_y_offset_px = int(fg.motion_y_multiplier * self.framecount)
             else:
                 motion_y_offset_px = 0
 
-            imageOffset = (((screenOffset[0]*fg.scrolling[0][0]//fg.scrolling[0][1])+motion_x_offset_px)%fg.pxSize[0],
-                           ((screenOffset[1]*fg.scrolling[1][0]//fg.scrolling[1][1])+motion_y_offset_px)%fg.pxSize[1])
+            imageOffset = (((screenOffset[0]*fg.scrolling[0][0]//fg.scrolling[0][1])+motion_x_offset_px)%fg.pxSize[1],
+                           ((screenOffset[1]*fg.scrolling[1][0]//fg.scrolling[1][1])+motion_y_offset_px)%fg.pxSize[0])
 
             for vs in fg.visibleSections: #vs = (left edge, right edge, top edge, bottom edge)
                 
@@ -207,18 +225,18 @@ class Renderer:
                     currentYrange = yRange
                     currentScreenPos = [xOffset,yOffset] #absolute screen position to blit to
                     
-                    currentCropX = (imageOffset[0] + xOffset)%fg.pxSize[0] #position of image to blit from
-                    currentCropY = (imageOffset[1] + yOffset)%fg.pxSize[1]
+                    currentCropX = (imageOffset[0] + xOffset)%fg.pxSize[1] #position of image to blit from
+                    currentCropY = (imageOffset[1] + yOffset)%fg.pxSize[0]
                     keepGoing = True
                     shiftX = False
                     shiftY = False
                     
                     while keepGoing:
-                        if currentCropX + currentXrange > fg.pxSize[0]:
-                            currentXrange = fg.pxSize[0] - currentCropX  
+                        if currentCropX + currentXrange > fg.pxSize[1]:
+                            currentXrange = fg.pxSize[1] - currentCropX
                             shiftX = True
-                        if currentCropY + currentYrange > fg.pxSize[1]:
-                            currentYrange = fg.pxSize[1] - currentCropY
+                        if currentCropY + currentYrange > fg.pxSize[0]:
+                            currentYrange = fg.pxSize[0] - currentCropY
                             shiftY = True
 
                         self.screen.blit(fg.image, 
@@ -228,14 +246,14 @@ class Renderer:
                         #blit across the X direction first, then shift down the Y and reset the X  
                         if shiftX:
                             currentScreenPos = [currentScreenPos[0] + currentXrange, currentScreenPos[1]]
-                            currentCropX = (currentCropX + currentXrange) % fg.pxSize[0]
+                            currentCropX = (currentCropX + currentXrange) % fg.pxSize[1]
                             currentXrange = xRange - currentXrange
                             shiftX = False
                         elif shiftY:
                             currentScreenPos = [xOffset, currentScreenPos[1] + currentYrange]
-                            currentCropX = (imageOffset[0] + xOffset)%fg.pxSize[0]
+                            currentCropX = (imageOffset[0] + xOffset)%fg.pxSize[1]
                             currentXrange = xRange
-                            currentCropY = (currentCropY + currentYrange) % fg.pxSize[1]
+                            currentCropY = (currentCropY + currentYrange) % fg.pxSize[0]
                             currentYrange = yRange - currentYrange                                                
                             shiftY = False    
                         else:
@@ -248,6 +266,7 @@ class Renderer:
             images = self.foregrounds
         
         for fg in images:
+
             for box in self.renderQueue:
                 for vs in fg.visibleSections:
                     
@@ -270,13 +289,13 @@ class Renderer:
                                       * fg.scrolling[0][0]
                                       // fg.scrolling[0][1] 
                                       + startScreenPos[0])
-                        startCropX = startCropX % fg.pxSize[0]
+                        startCropX = startCropX % fg.pxSize[1]
                           
                         startCropY = ((self.cameraTile[1]*PRAM.TILESIZE + self.cameraOffset[1])
                                       * fg.scrolling[1][0]
                                       // fg.scrolling[1][1] 
                                       + startScreenPos[1])
-                        startCropY = startCropY % fg.pxSize[1]
+                        startCropY = startCropY % fg.pxSize[0]
                                         
                         currentScreenPos = startScreenPos
                         currentCropX =  startCropX
@@ -290,11 +309,11 @@ class Renderer:
                         
                         #check to see if you are at the boundries of the image, and need to tile it
                         while keepGoing:
-                            if currentCropX + imageSizeX > fg.pxSize[0]:
-                                imageSizeX = fg.pxSize[0] - currentCropX
+                            if currentCropX + imageSizeX > fg.pxSize[1]:
+                                imageSizeX = fg.pxSize[1] - currentCropX
                                 shiftX = True
-                            if currentCropY + imageSizeY > fg.pxSize[1]:
-                                imageSizeY = fg.pxSize[1] - currentCropY
+                            if currentCropY + imageSizeY > fg.pxSize[0]:
+                                imageSizeY = fg.pxSize[0] - currentCropY
                                 shiftY = True
                                                     
                             self.screen.blit(fg.image, 
@@ -307,7 +326,7 @@ class Renderer:
                             #blit across the X direction first, then shift down the Y and reset the X  
                             if shiftX:
                                 currentScreenPos = [currentScreenPos[0] + imageSizeX, currentScreenPos[1]]
-                                currentCropX = (currentCropX + imageSizeX) % fg.pxSize[0]
+                                currentCropX = (currentCropX + imageSizeX) % fg.pxSize[1]
                                 imageSizeX = visibleBox[1] - visibleBox[0] - imageSizeX
                                 shiftX = False
                             elif shiftY:
@@ -401,3 +420,11 @@ class Renderer:
             panorama.image = pygame.image.load(panorama.filePath).convert_alpha()
         else:
             panorama.image = pygame.image.load(panorama.filePath).convert()
+
+    def averageRenderAllTime(self):
+        renderAllSum = 0
+        for atime in self.renderAllTimes:
+            renderAllSum += atime
+        avgRenderAllTime = round(renderAllSum/len(self.renderAllTimes)*1000,6)
+        print('Avergae Render All time: ' +str(avgRenderAllTime) + 'ms')
+        self.renderAllTimes = []

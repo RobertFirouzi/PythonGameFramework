@@ -1,7 +1,10 @@
 PROJECT CharmQuark 
 
+add panorama motion to DB
+add panorama motion to debugg
+panorama animation next?
+
 features:
-Scroll Panaramas - partiallially implemented, blurs in sections
 Animate Tiles
 Animate Panoramas
 Animate actors
@@ -51,6 +54,7 @@ Need to eventually figure out better unit testing
 
 OPTIMIZATION
 PRAMS all integers not strings
+render changed background for animated panoramas (complex algorithm, may not be worth it)
 from time time() method can be used to test certain modules for speed
 	(NUMPY does not appear faster in basic list iteration)
 can have pygame only get() relevant (chosen) events from the queue
