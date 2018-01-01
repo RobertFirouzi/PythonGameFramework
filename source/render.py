@@ -31,7 +31,10 @@ class Renderer:
 
         self.renderQueue = []
 
+        self.framecount = 0 #a running count of frame ticks to animate images
+
     def loadAssets(self, levelData):
+        self.framecount = 0 #reset framecount
         self.levelData = levelData #TODO may not need this reference
         self.lowerTiles = levelData.lowerTiles
         self.upperTiles = levelData.upperTiles
@@ -48,9 +51,17 @@ class Renderer:
 
         for background in self.backgrounds:
             self.loadPanorama(background)
+            if background.isMotion_X:
+                background.motion_x_multiplier = background.motionX_pxs/PRAM.GAME_FPS
+            if background.isMotion_Y:
+                background.motion_y_multiplier = background.motionY_pxs/PRAM.GAME_FPS
 
         for foreground in self.foregrounds:
             self.loadPanorama(foreground)
+            if foreground.isMotion_X:
+                foreground.motion_x_multiplier = foreground.motionX_pxs/PRAM.GAME_FPS
+            if foreground.isMotion_Y:
+                foreground.motion_y_multiplier = foreground.motionY_pxs/PRAM.GAME_FPS
 
         self.lowerTileMap = self.loadTilemap(levelData.lowerTileMap.filePath)
         self.upperTileMap = self.loadTilemap(levelData.upperTileMap.filePath)
@@ -62,7 +73,7 @@ class Renderer:
         self.cameraPosition = self.camera.position
 
         if len(self.lowerTiles)>0: #quick hack to make sure a level is loaded
-            if self.camera.moveFlag:
+            if self.camera.moveFlag or True:
                 self.renderAllPanorama(BG = True)
                 self.renderAllLowerTile()
                 self.renderAllActors()
@@ -73,11 +84,13 @@ class Renderer:
                 self.renderChangedLowerTile()                
                 self.renderChangedActors()
                 self.renderChangedUpperTile()                 
-                self.renderChangedPanorama(BG = False)                   
+                self.renderChangedPanorama(BG = False)
             self.renderQueue.clear()
             self.renderedLowerTiles.clear()
             self.renderedUpperTiles.clear()
-            self.camera.moveFlag = False       
+            self.camera.moveFlag = False
+
+        self.framecount+=1
 
     def renderAllLowerTile(self):
         for y in range(PRAM.DISPLAY_TILE_HEIGHT):
@@ -149,8 +162,19 @@ class Renderer:
         else:
             images = self.foregrounds
         for fg in images:
-            imageOffset = (screenOffset[0]*fg.scrolling[0][0]//fg.scrolling[0][1]%fg.pxSize[0], 
-                           screenOffset[1]*fg.scrolling[1][0]//fg.scrolling[1][1]%fg.pxSize[1])
+            if fg.isMotion_X:
+                motion_x_offset_px = fg.motion_x_multiplier * self.framecount
+            else:
+                motion_x_offset_px = 0
+
+            if fg.isMotion_Y:
+                motion_y_offset_px = fg.motion_y_multiplier * self.framecount
+            else:
+                motion_y_offset_px = 0
+
+            imageOffset = (((screenOffset[0]*fg.scrolling[0][0]//fg.scrolling[0][1])+motion_x_offset_px)%fg.pxSize[0],
+                           ((screenOffset[1]*fg.scrolling[1][0]//fg.scrolling[1][1])+motion_y_offset_px)%fg.pxSize[1])
+
             for vs in fg.visibleSections: #vs = (left edge, right edge, top edge, bottom edge)
                 
                 #check if visible portion of background is on screen

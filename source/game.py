@@ -34,6 +34,7 @@ class Game:
 
     def loadLevel(self, eventLoadLevel):
         self.unloadScene()
+
         self.addEvent(EventSetInput(PRAM.INPTYPE_NORMAL))
         self.levelData = LevelData()
         self.levelData.loadLevel(eventLoadLevel.levelIndex)

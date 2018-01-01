@@ -1,5 +1,14 @@
 PROJECT CharmQuark 
 
+features:
+Scroll Panaramas - partiallially implemented, blurs in sections
+Animate Tiles
+Animate Panoramas
+Animate actors
+
+temp hack:
+game_level loadBackground/loadForeground - harcoding panorama scrolling
+
 debug:
 right click a tile and be able to change its tilemap index?
 
@@ -8,6 +17,7 @@ Documentation Documentation Documentation
 all size variables named including pixel or tile ("<var>_px" or "<var>_tile")
 metrics: timeit to measure speed of render all vs render changed
 	other metrics?
+need to seperate out some of the parameters and name them, rather then lists and sublists (eg scroll speed)
 
 buttomap
 	the button map should reference the actual keys, which get mapped to specific behaviors

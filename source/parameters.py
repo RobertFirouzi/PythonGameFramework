@@ -35,7 +35,7 @@ DISPLAY_TILE_HEIGHT = DISPLAY_HEIGHT // TILESIZE + 2
 #determine when to pan the camera with the char
 CAMERA_WIDTH = DISPLAY_WIDTH // 5 #the min number of pixels from char to edge of screen
 CAMERA_HEIGHT = DISPLAY_HEIGHT // 4
-
+GAME_FPS = 60
 
 ### INPUT TYPES###
 INPTYPE_OBSERVER = 'observe'

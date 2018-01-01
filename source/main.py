@@ -5,7 +5,7 @@ Created on Feb 24, 2017
 '''
 
 import pygame
-import parameters as PRAM
+from parameters import *
 from setup import soundPlayerFactory, playerFactory, eventHandlerFactory
 from render import Renderer
 from game import Game
@@ -14,7 +14,7 @@ from camera import GameCamera
 
 ### SETUP ###
 pygame.init()
-screen = pygame.display.set_mode((PRAM.DISPLAY_WIDTH, PRAM.DISPLAY_HEIGHT))
+screen = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 CLOCK = pygame.time.Clock() 
 DONE = False
 
@@ -57,7 +57,7 @@ while not DONE:
             game.runDebugLoop() #if debug is activated ented debug mode
 
         pygame.display.flip()
-        CLOCK.tick(60) #60 FPS
+        CLOCK.tick(GAME_FPS) #60 FPS
 
 #this will only run if the module is run as the main module, not if imported.
 if __name__ == '__main__':
