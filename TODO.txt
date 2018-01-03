@@ -1,5 +1,10 @@
 PROJECT CharmQuark 
 
+metrics:
+render all ~9-10ms per loop
+render changed: 0.07-0.1ms per loop
+over 100 times faster to render changed!
+
 add panorama motion to DB
 add panorama motion to debugg
 panorama animation next?

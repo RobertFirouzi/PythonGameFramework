@@ -36,6 +36,7 @@ class Renderer:
         self.framecount = 0 #a running count of frame ticks to animate images
 
         self.renderAllTimes = [] #TODO debud code for metrics
+        self.renderChangedTimes = [] #TODO debud code for metrics
 
     def loadAssets(self, levelData):
         self.framecount = 0 #reset framecount
@@ -83,24 +84,31 @@ class Renderer:
         self.cameraPosition = self.camera.position
 
         if len(self.lowerTiles)>0: #quick hack to make sure a level is loaded
-            if self.camera.moveFlag or self.animatedPanorama:
+            if self.camera.moveFlag or self.animatedPanorama: #know rend
                 strartime = time() #TODO debug
 
                 self.renderAllPanorama(BG = True)
                 self.renderAllLowerTile()
                 self.renderAllActors()
-                self.renderAllUpperTile()                
+                self.renderAllUpperTile()
                 self.renderAllPanorama(BG = False)
 
                 self.renderAllTimes.append(time()-strartime) #TODO debug
                 if len(self.renderAllTimes)>100:
                     self.averageRenderAllTime()
             else:
+                strartime = time() #TODO debug
+
                 self.renderChangedPanorama(BG = True)
-                self.renderChangedLowerTile()                
+                self.renderChangedLowerTile()
                 self.renderChangedActors()
-                self.renderChangedUpperTile()                 
+                self.renderChangedUpperTile()
                 self.renderChangedPanorama(BG = False)
+
+                self.renderChangedTimes.append(time() - strartime)  # TODO debug
+                if len(self.renderChangedTimes) > 100:
+                    self.averageRenderChangedTime()
+
             self.renderQueue.clear()
             self.renderedLowerTiles.clear()
             self.renderedUpperTiles.clear()
@@ -259,6 +267,8 @@ class Renderer:
                         else:
                             keepGoing = False #you have blitted the entire visible section
 
+
+#Currently does not work with animated/motion backgrounds
     def renderChangedPanorama(self, BG = True):
         if BG:
             images = self.backgrounds
@@ -428,3 +438,12 @@ class Renderer:
         avgRenderAllTime = round(renderAllSum/len(self.renderAllTimes)*1000,6)
         print('Avergae Render All time: ' +str(avgRenderAllTime) + 'ms')
         self.renderAllTimes = []
+
+
+    def averageRenderChangedTime(self):
+        renderChangeSum = 0
+        for atime in self.renderChangedTimes:
+            renderChangeSum += atime
+        avgRenderChangeTime = round(renderChangeSum /len(self.renderChangedTimes)*1000,6)
+        print('Avergae Render Changed  time: ' +str(avgRenderChangeTime) + 'ms')
+        self.renderChangedTimes = []

@@ -141,8 +141,8 @@ class LevelData:
                                              scrolling,
                                              background[7], #alpha
                                              background[8], #layer
-                                             True, #isMotion_X TODO need to pull from DB
-                                             True, #isMotion_Y
+                                             False, #isMotion_X TODO need to pull from DB
+                                            False, #isMotion_Y
                                              120, #motionX_pxs
                                              120) #motionY_pxs
             
@@ -170,8 +170,8 @@ class LevelData:
                                              scrolling,
                                              foreground[7],  #alpha
                                              foreground[8],  #layer
-                                             True,  # Motion
-                                             True,
+                                            False,  # Motion
+                                            False,
                                              120,  # motionX_pxs
                                              120)  # motionY_pxs
             
