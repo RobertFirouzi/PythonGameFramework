@@ -30,11 +30,13 @@ class Renderer:
         self.actorsDict = {} #reference to image files
         self.lowerTileMap = None #image file
         self.upperTileMap = None#image file
+        self.animatedPanorama = False
 
         self.renderQueue = []
 
         self.framecount = 0 #a running count of frame ticks to animate images
 
+        #Lists to hold calculated render times for metrics - debug only
         self.renderAllTimes = [] #TODO debud code for metrics
         self.renderChangedTimes = [] #TODO debud code for metrics
 

@@ -142,9 +142,11 @@ class LevelData:
                                              background[7], #alpha
                                              background[8], #layer
                                              False, #isMotion_X TODO need to pull from DB
-                                            False, #isMotion_Y
+                                             False, #isMotion_Y
                                              120, #motionX_pxs
-                                             120) #motionY_pxs
+                                             120, #motionY_pxs
+                                             True, #isAnimated
+                                             2)  #fps
             
             self.backgrounds.append(panoramicImage)
         self.backgrounds = tuple(self.backgrounds)
@@ -170,8 +172,8 @@ class LevelData:
                                              scrolling,
                                              foreground[7],  #alpha
                                              foreground[8],  #layer
-                                            False,  # Motion
-                                            False,
+                                             False,  # Motion
+                                             False,
                                              120,  # motionX_pxs
                                              120)  # motionY_pxs
             

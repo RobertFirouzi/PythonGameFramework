@@ -34,6 +34,8 @@ import parameters as PRAM
 ##DEV
 # isAnimated = True means the panorama is animated
 # animated_ips = number of images per second
+# animated panorama filepath is to a directory of numbered pictures [0.<extension>, 1.<extension>, etc]
+# engine will go through all images in order at designated fps (frames per second)
 # TODO - rest of neeed animation params (eg pics, index of pic, etc)
 
 class PanoramicImage():
@@ -47,7 +49,9 @@ class PanoramicImage():
                  isMotion_X = False,
                  isMotion_Y = False,
                  motionX_pxs = 0,
-                 motionY_pxs = 0):
+                 motionY_pxs = 0,
+                 isAnimaed = False,
+                 animated_fps = 0):
         self.filePath = filePath
         self.pxSize = pxSize
         self.visibleSections = visibleSections
