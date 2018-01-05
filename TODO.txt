@@ -97,3 +97,5 @@ how to have events spaced out over frames, or timed?
 
 
 PANORAMA
+using os.listdir for loading animated backgrounds - instead store the filenames as a list:
+	will need to change the filename from TEXT to BLOB in the DB

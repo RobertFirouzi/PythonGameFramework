@@ -2,6 +2,7 @@ from actors import SimpleBox
 import pygame
 import parameters as PRAM
 
+import os #Temporary fix to load animated bakground images - remove after DB updated
 from time import time
 
 class Renderer:
@@ -59,7 +60,13 @@ class Renderer:
         self.animatedPanorama = False #if this is true, must always re-render entire screen every frame
 
         for background in self.backgrounds:
-            self.loadPanorama(background)
+            if background.isAnimated:
+                self.animatedPanorama = True
+                background.image = self.loadAnimatedPanoramas(background)
+                background.framesPerImage = round(PRAM.GAME_FPS/background.animated_fps,2)
+                background.numbImages= len(background.image)
+            else:
+                background.image = self.loadPanorama(background)
             if background.isMotion_X:
                 background.motion_x_multiplier = background.motionX_pxs/PRAM.GAME_FPS
                 self.animatedPanorama = True
@@ -68,7 +75,13 @@ class Renderer:
                 self.animatedPanorama = True
 
         for foreground in self.foregrounds:
-            self.loadPanorama(foreground)
+            if foreground.isAnimated:
+                self.animatedPanorama = True
+                foreground.image = self.loadAnimatedPanoramas(foreground)
+                foreground.framesPerImage = round(PRAM.GAME_FPS/background.animated_fps,2)
+                foreground.numbImages= len(foreground.image)
+            else:
+                foreground.image = self.loadPanorama(foreground)
             if foreground.isMotion_X:
                 foreground.motion_x_multiplier = foreground.motionX_pxs/PRAM.GAME_FPS
                 self.animatedPanorama = True
@@ -203,6 +216,13 @@ class Renderer:
             imageOffset = (((screenOffset[0]*fg.scrolling[0][0]//fg.scrolling[0][1])+motion_x_offset_px)%fg.pxSize[1],
                            ((screenOffset[1]*fg.scrolling[1][0]//fg.scrolling[1][1])+motion_y_offset_px)%fg.pxSize[0])
 
+            if fg.isAnimated:
+                if int(self.framecount%fg.framesPerImage)==0: #time to change the pic
+                    fg.imageIndex = (fg.imageIndex + 1)%fg.numbImages
+                displayImage = fg.image[fg.imageIndex]
+            else:
+                displayImage = fg.image
+
             for vs in fg.visibleSections: #vs = (left edge, right edge, top edge, bottom edge)
                 
                 #check if visible portion of background is on screen
@@ -249,7 +269,7 @@ class Renderer:
                             currentYrange = fg.pxSize[0] - currentCropY
                             shiftY = True
 
-                        self.screen.blit(fg.image, 
+                        self.screen.blit(displayImage,
                                          currentScreenPos,
                                         (currentCropX, currentCropY, currentXrange, currentYrange)) 
                                                                  
@@ -427,11 +447,23 @@ class Renderer:
     def loadTilemap(self, filePath):
         return pygame.image.load(filePath).convert()
 
+    #use pygame image.load, convert alpha if necessary, return the image file
     def loadPanorama(self, panorama):
         if panorama.alpha == True:
-            panorama.image = pygame.image.load(panorama.filePath).convert_alpha()
+            return pygame.image.load(panorama.filePath).convert_alpha()
         else:
-            panorama.image = pygame.image.load(panorama.filePath).convert()
+            return pygame.image.load(panorama.filePath).convert()
+
+    def loadAnimatedPanoramas(self, panorama):
+        images = os.listdir(panorama.filePath)
+        convertedImages = []
+        for image in images:
+            if panorama.alpha == True:
+                convertedImages.append(pygame.image.load(panorama.filePath+'\\' +image).convert_alpha())
+            else:
+                convertedImages.append(pygame.image.load(panorama.filePath+'\\' +image).convert())
+        convertedImages = tuple(convertedImages)
+        return convertedImages
 
     def averageRenderAllTime(self):
         renderAllSum = 0

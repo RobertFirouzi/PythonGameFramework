@@ -172,10 +172,12 @@ class LevelData:
                                              scrolling,
                                              foreground[7],  #alpha
                                              foreground[8],  #layer
-                                             False,  # Motion
-                                             False,
+                                             False,  # Motion_X
+                                             False, # Motion_Y
                                              120,  # motionX_pxs
-                                             120)  # motionY_pxs
+                                             120,  # motionY_pxs
+                                             False, #isAnimated
+                                             0) #fps
             
             self.foregrounds.append(panoramicImage)
 

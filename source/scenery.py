@@ -50,7 +50,7 @@ class PanoramicImage():
                  isMotion_Y = False,
                  motionX_pxs = 0,
                  motionY_pxs = 0,
-                 isAnimaed = False,
+                 isAnimated = False,
                  animated_fps = 0):
         self.filePath = filePath
         self.pxSize = pxSize
@@ -62,9 +62,14 @@ class PanoramicImage():
         self.isMotion_Y = isMotion_Y
         self.motionX_pxs = motionX_pxs
         self.motionY_pxs = motionY_pxs
-        
+        self.isAnimated = isAnimated
+        self.animated_fps = animated_fps
+
         #explicit declaration of class fields
         self.image = None # the image date
 
         self.motion_x_multiplier = 0 #calculated by the Renderer on level load based on Game FPS
         self.motion_y_multiplier = 0
+        self.framesPerImage = 1 #if animated, the number of frames per each image flip, calculated in renderer leve load
+        self.numbImages = 1 #calculated when loaded
+        self.imageIndex = 0 #tracks which image ti display, if animated
