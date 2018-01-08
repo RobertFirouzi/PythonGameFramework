@@ -118,7 +118,7 @@ def createDatabase():
 def setupActorsTable():
 	createTable(DB, table_Actors, col_levelKey, TYPE_INT, False)	
 
-def setupBackgroundsTable():
+def setupForegroundsTable():
 	createTable(DB, table_Foregrounds, col_foregroundsIndex, TYPE_INT)
 	addColumn(DB, table_Foregrounds, col_levelKey, TYPE_INT)	
 	addColumn(DB, table_Foregrounds, col_filepath, TYPE_TEXT)	

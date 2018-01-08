@@ -141,12 +141,12 @@ class LevelData:
                                              scrolling,
                                              background[7], #alpha
                                              background[8], #layer
-                                             False, #isMotion_X TODO need to pull from DB
-                                             False, #isMotion_Y
-                                             120, #motionX_pxs
-                                             120, #motionY_pxs
-                                             True, #isAnimated
-                                             2)  #fps
+                                             background[9], #isMotion_X TODO need to pull from DB
+                                             background[10], #isMotion_Y
+                                             background[11], #motionX_pxs
+                                             background[12], #motionY_pxs
+                                             background[13], #isAnimated
+                                             background[14])  #fps
             
             self.backgrounds.append(panoramicImage)
         self.backgrounds = tuple(self.backgrounds)
@@ -172,12 +172,12 @@ class LevelData:
                                              scrolling,
                                              foreground[7],  #alpha
                                              foreground[8],  #layer
-                                             False,  # Motion_X
-                                             False, # Motion_Y
-                                             120,  # motionX_pxs
-                                             120,  # motionY_pxs
-                                             False, #isAnimated
-                                             0) #fps
+                                             foreground[9],  # Motion_X
+                                             foreground[10], # Motion_Y
+                                             foreground[11],  # motionX_pxs
+                                             foreground[12],  # motionY_pxs
+                                             foreground[13], #isAnimated
+                                             foreground[14]) #fps
             
             self.foregrounds.append(panoramicImage)
 

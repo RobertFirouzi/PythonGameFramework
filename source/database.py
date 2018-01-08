@@ -43,7 +43,9 @@ def getTileMaps(key):
 
 #col[0] = background_index, col[1] = level_key, col[2] = file_path
 #col[3] = pxHeight, col[4] = pxWidth, col[5] = visibleSections,
-#col[6] = scrolling, col[7] = alpha, col[8] = layer   
+#col[6] = scrolling, col[7] = alpha, col[8] = layer
+#col[9] = is_motion_x, col[10] = is_motion_y, col[11] = motion_x_pxs
+#col[12] = motion_y_pxs, col[13] = is_animated col[14] = animated_fps
 def getBackgrounds(key):
     query = "SELECT * FROM Backgrounds WHERE level_key = {}".format(key)
     conn = openDB(DB_LOCATION)
@@ -56,7 +58,9 @@ def getBackgrounds(key):
 
 #col[0] = foreground_index, col[1] = level_key, col[2] = file_path
 #col[3] = pxHeight, col[4] = pxWidth, col[5] = visibleSections,
-#col[6] = scrolling, col[7] = alpha, col[8] = layer   
+#col[6] = scrolling, col[7] = alpha, col[8] = layer
+#col[9] = is_motion_x, col[10] = is_motion_y, col[11] = motion_x_pxs
+#col[12] = motion_y_pxs, col[13] = is_animated col[14] = animated_fps
 def getForegrounds(key):
     query = "SELECT * FROM Foregrounds WHERE level_key = {}".format(key)
     conn = openDB(DB_LOCATION)

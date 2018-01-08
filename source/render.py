@@ -109,7 +109,7 @@ class Renderer:
                 self.renderAllPanorama(BG = False)
 
                 self.renderAllTimes.append(time()-strartime) #TODO debug
-                if len(self.renderAllTimes)>100:
+                if len(self.renderAllTimes)>100 and False: #TODO turned off for now
                     self.averageRenderAllTime()
             else:
                 strartime = time() #TODO debug
@@ -121,7 +121,7 @@ class Renderer:
                 self.renderChangedPanorama(BG = False)
 
                 self.renderChangedTimes.append(time() - strartime)  # TODO debug
-                if len(self.renderChangedTimes) > 100:
+                if len(self.renderChangedTimes) > 100 and False: #TODO turned off for now
                     self.averageRenderChangedTime()
 
             self.renderQueue.clear()
@@ -221,7 +221,7 @@ class Renderer:
                     fg.imageIndex = (fg.imageIndex + 1)%fg.numbImages
                 displayImage = fg.image[fg.imageIndex]
             else:
-                displayImage = fg.image
+                displayImage = fg.image[0]
 
             for vs in fg.visibleSections: #vs = (left edge, right edge, top edge, bottom edge)
                 
@@ -450,9 +450,9 @@ class Renderer:
     #use pygame image.load, convert alpha if necessary, return the image file
     def loadPanorama(self, panorama):
         if panorama.alpha == True:
-            return pygame.image.load(panorama.filePath).convert_alpha()
+            return (pygame.image.load(panorama.filePath).convert_alpha(),) #tuple of one item
         else:
-            return pygame.image.load(panorama.filePath).convert()
+            return (pygame.image.load(panorama.filePath).convert(),)
 
     def loadAnimatedPanoramas(self, panorama):
         images = os.listdir(panorama.filePath)

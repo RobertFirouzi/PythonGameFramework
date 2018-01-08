@@ -1,96 +1,13 @@
 import os
 import threading
-### PARAMETERS ###
-INT = 0
-STRING = 1
-FLOAT = 2
+from debug_constants import * #contains the strings for console printing
 
-DEBUG_MENU =\
-'''
-Select a Debug Option (or -99 to exit debugger):
-0) Quit
-1) Change Character Speed
-2) Edit Scenery
-3) Edit Tilemap
->>>'''
-QUIT = 0
-EXIT_DEBUGGER = -99
-EXIT_DEBUGGER_STR = '-99'
-CHAR_SPEED = 1
-SCENERY = 2
-TILEMAP = 3
-
-MOVESPEED_MENU=\
-'''
-Enter an integer value for character Move Speed, or -99 to exit debugger.
-(0 is no movement, 10 is average, 30 is insane)
->>>'''
-MIN_MOVE_SPEED = -10000
-MAX_MOVE_SPEED = 10000
-
-SCENERY_MENU=\
-'''
-Choose Scenery Type (or -99 to exit debugger)
-0) Quit
-1) Background
-2) Foreground 
->>>'''
-BACKGROUND = 1
-FOREGROUND = 2
-
-PANORAMA_PROMPT='''or 0 to Cancel, or -99 to exit debugger
->>>'''
-
-TILEMAP_MENU=\
-'''
-Choose Tilemap Type (or -99 to exit debugger)
-0) Quit
-1) Lower
-2) Upper
-3) Barrier
->>>'''
-LOWER = 1
-UPPER = 2
-BARRIER = 3
-
-SCENERY_EDIT_MENU =\
-'''
-What will you change? (or -99 to exit debugger)
-0) Quit
-1) filePath (load new image)
-2) visible sections
-3) scrolling
-4) alpha (True or False)
-5) layer
->>>
-'''
-FILEPATH = 1
-VISIBILE_SECTIONS = 2
-SCROLLING = 3
-ALPHA = 4
-LAYER = 5
-
-GET_FILEPATH='''Enter a filepath to a panorama image:
->>>'''
-
-ALLOWED_IMAGETYPES = ('.jpg', '.png', '.gif', '.bmp', '.pcx', '.tga', '.tif', '.lbm', '.pbm', '.pgm', '.ppm', '.xpm',
-                     '.JPG', '.PNG', '.GIF', '.BMP', '.PCX', '.TGA', '.TIF', '.LBM', '.PBM', '.PGM', '.PPM', '.XPM')
-
-VISIBILE_MENU=\
-'''
-Add or Delete a Section? (or -99 to exit Debugger)
-0) Quit
-1) Delete
-2) Add
->>>
-'''
-DELETE_VISIBILITY = 1
-ADD_VISIBILITY = 2
 #Class to run debug mode - allows user programmer to change in game variables to test different areas of code
 class DebugLooper(threading.Thread):
     def __init__(self, game):
         threading.Thread.__init__(self, daemon=True)
         self.game = game #need a reference to main game to be able to tweak game variables
+
     def run(self):
         result = 0
         keepGoing = True
@@ -181,7 +98,7 @@ class DebugLooper(threading.Thread):
         index = devInput -1 #index into array of scenery objects to edit
         keepGoing = True
         while keepGoing:
-            devInput = getInput(SCENERY_EDIT_MENU, INT, [QUIT, LAYER])
+            devInput = getInput(SCENERY_EDIT_MENU, INT, [QUIT, ANIMATED_FPS])
             if devInput == QUIT:
                 keepGoing = False
 
@@ -228,6 +145,7 @@ class DebugLooper(threading.Thread):
                     scenery[index].visibleSections = list(scenery[index].visibleSections)
                     scenery[index].visibleSections.append(newVisibility)
                     scenery[index].visibleSections = tuple(scenery[index].visibleSections)
+
             elif devInput == SCROLLING:
                 print('Current scrolling: ' + str(scenery[index].scrolling))
                 print('Enter ints for the 4 values')
@@ -239,10 +157,40 @@ class DebugLooper(threading.Thread):
                 scenery[index].scrolling = scrolling
 
             elif devInput == ALPHA:
-                print('edit alpha')
+                print('not iplemented yet')
 
             elif devInput == LAYER:
-                print('edit layer')
+                print('not iplemented yet')
+
+            elif devInput == MOTIONX:
+                devInput = getInput(GET_MOTION, INT,[FALSE,TRUE])
+                if devInput:
+                    scenery[index].isMotion_X = True
+                else:
+                    scenery[index].isMotion_X = False
+
+            elif devInput == MOTIONY:
+                devInput = getInput(GET_MOTION, INT,[FALSE,TRUE])
+                if devInput:
+                    scenery[index].isMotion_Y = True
+                else:
+                    scenery[index].isMotion_Y = False
+
+            elif devInput == MOTION_X_PXS:
+                print('not iplemented yet')
+
+            elif devInput == MOTION_Y_PXS:
+                print('not iplemented yet')
+
+            elif devInput == ANIMATED:
+                devInput = getInput(GET_MOTION, INT,[FALSE,TRUE])
+                if devInput:
+                    scenery[index].isAnimated = True
+                else:
+                    scenery[index].isAnimated = False
+
+            elif devInput == ANIMATED_FPS:
+                print('not iplemented yet')
 
             self.game.renderer.camera.moveFlag = True
 
