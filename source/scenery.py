@@ -72,4 +72,45 @@ class PanoramicImage():
         self.motion_y_multiplier = 0
         self.framesPerImage = 1 #if animated, the number of frames per each image flip, calculated in renderer leve load
         self.numbImages = 1 #calculated when loaded
-        self.imageIndex = 0 #tracks which image ti display, if animated
+        self.imageIndex = 0 #tracks which image to display, if animated
+
+
+# Class to contain data for a tilemap
+# The tiles are stored in 1 image file. To blit a tile correctly, use tiles index -
+# - and calculate based on tilesize and tiles per row
+# A tile index 0 is blank (nothing blitted)
+# If the tilemap contains animated tiles, the animated tiles begin at the highest index.  All frames are stored
+# sequentially in the tilemap image.  The tiles index will always reference the first tile in an animated group
+# Go througn the animated tiles sequence based on framecount
+# Although upper and lower stored in same DB row, this continer holds just one
+# Does not hold the borders info
+class Tilemap():
+    def __init__(self,
+                 filePath = '', #location of image to load
+                 height_tiles = 3,
+                 width_tiles = 3,
+                 tileSize_px = 48,
+                 tiles = ((0,0,0),(0,0,0),(0,0,0),), #this maps the location on the image to load based on tilesize
+                 type = 'lower', #lower or upper tilemap
+                 isAnimated = False, #if animated, some tiles contain multiple frames
+                 animatedIndex = 9, #the tiles at this index and higher are part of animated groups
+                 frames = 1, #how many frames there are in the animation, ie how many tiles in an animated group
+                 fps = 1): #how fast the animation should play
+        self.filePath = filePath
+        self.height_tiles = height_tiles
+        self.width_tiles = width_tiles
+        self.tileSize_px = tileSize_px
+        self.tiles = tiles
+        self.type = type
+        self.isAnimated = isAnimated
+        self.animatedIndex = animatedIndex
+        self.frames = frames
+        self.fps = fps
+
+        #explicit declaration of class fields
+        self.image = None
+        self.framesPerImage = 1 #if animated, the number of frames per each image flip, calculated in renderer leve load
+        self.frameIndex = 0 #tracks which frame to display, if tile is animated
+
+
+

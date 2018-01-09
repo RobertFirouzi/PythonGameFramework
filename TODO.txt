@@ -1,21 +1,28 @@
 PROJECT CharmQuark 
 
+load tilemaps into their container class
+add animation algorithm to blitting tiles
+create some exampele animated tiles in the tile map for testing
+
 metrics:
 render all ~9-10ms per loop
 render changed: 0.07-0.1ms per loop
 over 100 times faster to render changed!
 
-add panorama motion to DB
-add panorama motion to debugg
-panorama animation next?
+renderAllTiles upper and lower can be combined to one method (with passing 1 param)
 
 features:
 Animate Tiles
-Animate Panoramas
+	can have an animated tilemap set, and static tilemap image
+		based on index, which one to load is known.
+		based on framcount and fps of tilemap, can know which animated tilemap image to use
+		can blit all onto one surface, and calculate the postion of blit based in index, fps, framecount
+			(so animated tiles have several entries on the one tilemap)
+Sprites for actors
 Animate actors
-
-temp hack:
-game_level loadBackground/loadForeground - harcoding panorama scrolling
+Weather or other visual ambient affects
+Special effects (eg: add a spell cast animation, or any special animation call)
+HUD
 
 debug:
 right click a tile and be able to change its tilemap index?
@@ -23,8 +30,6 @@ right click a tile and be able to change its tilemap index?
 general todo
 Documentation Documentation Documentation
 all size variables named including pixel or tile ("<var>_px" or "<var>_tile")
-metrics: timeit to measure speed of render all vs render changed
-	other metrics?
 need to seperate out some of the parameters and name them, rather then lists and sublists (eg scroll speed)
 
 buttomap
@@ -60,13 +65,9 @@ Need to eventually figure out better unit testing
 OPTIMIZATION
 PRAMS all integers not strings
 render changed background for animated panoramas (complex algorithm, may not be worth it)
-from time time() method can be used to test certain modules for speed
-	(NUMPY does not appear faster in basic list iteration)
 can have pygame only get() relevant (chosen) events from the queue
 Double Buffering?
 For the EventHandler dictionary, use a tuple and index into it by int (not a dict with string) 
-SPEED TESTS:
-Passing a variable vs using the self. reference
 
 ACTORS
 Render an actor if onscreen only
@@ -77,7 +78,6 @@ TOOLS
 GIMP - learn mainly for transparency effect, then try to put in with transparency to pygame
 
 ANIMATION
-Panoramas
 Tiles
 Actors
 
