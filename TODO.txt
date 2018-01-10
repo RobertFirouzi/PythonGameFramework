@@ -1,5 +1,13 @@
 PROJECT CharmQuark 
 
+Tilemap class already exists in game_level module - replace with new one in scenery
+update object with all params (hard code in ones not from DB for now)
+algorithm already calculates pixel index based on tile index - how to rectify this for animated?
+	if coordinate over certain value, then recacluate tile per frame?  Sounds slow...
+	save the calculated frame values as lists in the tilemap container.  Use dictionary
+	based on starting index, which can be used to calculate an indexed list.  then if the
+	Y value of the index > animated cutoff, look up index from dictionary to get blit offset.
+
 load tilemaps into their container class
 add animation algorithm to blitting tiles
 create some exampele animated tiles in the tile map for testing

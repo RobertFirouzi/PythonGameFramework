@@ -1,7 +1,7 @@
 import parameters as PRAM
 import database
 import json #to parse the lists in the DB
-from scenery import PanoramicImage
+from scenery import PanoramicImage, Tilemap
 
 class Tilemap:
     def __init__(self, filePath, tileSize, size, tileType):

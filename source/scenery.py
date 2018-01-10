@@ -24,8 +24,6 @@ import parameters as PRAM
 # The above calculates the divisor.  Multiplier makes the image scroll faster then the level, so this must be user chosen.
 # If user desires a 1.4 scroll speed, choose a multiplier of 14 and divisor of 10.
 
-
-### NEED TO ADD DATABASE ENTRIES ### #TODO
 ##DEV
 # isMotion = True means the panorama scrolls in X/Y direction as screen stays still
 # motionX_pxs - Pixels per second (positive/negative determines direction) in X direction
@@ -36,7 +34,6 @@ import parameters as PRAM
 # animated_ips = number of images per second
 # animated panorama filepath is to a directory of numbered pictures [0.<extension>, 1.<extension>, etc]
 # engine will go through all images in order at designated fps (frames per second)
-# TODO - rest of neeed animation params (eg pics, index of pic, etc)
 
 class PanoramicImage():
     def __init__(self, 
@@ -111,6 +108,6 @@ class Tilemap():
         self.image = None
         self.framesPerImage = 1 #if animated, the number of frames per each image flip, calculated in renderer leve load
         self.frameIndex = 0 #tracks which frame to display, if tile is animated
-
+        self.animatedOffsets = {} #TODO - Use a dictionary to save lists of animate index values, referenced by the starting position
 
 
