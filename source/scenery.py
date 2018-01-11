@@ -84,11 +84,12 @@ class PanoramicImage():
 class Tilemap():
     def __init__(self,
                  filePath = '', #location of image to load
+                 tileSize_px = 48,
                  height_tiles = 3,
                  width_tiles = 3,
-                 tileSize_px = 48,
                  tiles = ((0,0,0),(0,0,0),(0,0,0),), #this maps the location on the image to load based on tilesize
                  type = 'lower', #lower or upper tilemap
+                 alpha = False, #True if contains alpha data
                  isAnimated = False, #if animated, some tiles contain multiple frames
                  animatedIndex = 9, #the tiles at this index and higher are part of animated groups
                  frames = 1, #how many frames there are in the animation, ie how many tiles in an animated group
@@ -99,6 +100,7 @@ class Tilemap():
         self.tileSize_px = tileSize_px
         self.tiles = tiles
         self.type = type
+        self.alpha = alpha
         self.isAnimated = isAnimated
         self.animatedIndex = animatedIndex
         self.frames = frames

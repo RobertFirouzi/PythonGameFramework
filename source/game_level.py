@@ -3,13 +3,6 @@ import database
 import json #to parse the lists in the DB
 from scenery import PanoramicImage, Tilemap
 
-class Tilemap:
-    def __init__(self, filePath, tileSize, size, tileType):
-        self.filePath = filePath
-        self.tileSize = tileSize
-        self.size = size
-        self.tileType=tileType
-
 class LevelData:
     def __init__(self,
                  name = '',
@@ -29,8 +22,6 @@ class LevelData:
         self.size = size
         self.lowerTileMap = lowerTileMap
         self.upperTileMap = upperTileMap
-        self.lowerTiles = lowerTiles
-        self.upperTiles = upperTiles
         self.borders = borders
         self.eventTiles = eventTiles
         self.actors = actors 
@@ -40,26 +31,30 @@ class LevelData:
     
     
     def loadLevel(self, index):
-        self.loadTileMaps(index)
         self.loadLevelData(index)
         self.loadLevelEvents(index)
         self.loadGameEvents(index)
         self.loadActors(index)
         self.loadBackgrounds(index)
         self.loadForegrounds(index)
-    
+
+    #Loads the level name, size, tile maps and border map
     def loadLevelData(self, index):
         row = database.getLevelData(index)
         if row is None:
             return False
-            
+
+        self.name = row[1]
+        self.size = (row[2],row[3])
+
         lowerTiles = json.loads(row[4]) #unpack the strings into 2d lists
         upperTiles = json.loads(row[5])
         borders = json.loads(row[6])
         
         lowerTiles = tilemapIndexToCoord(lowerTiles) #lower tiles
         upperTiles = tilemapIndexToCoord(upperTiles) #upper tiles
-                        
+
+        #Convert to tuples for efficiency
         for i in range(len(lowerTiles)):
             lowerTiles[i] = tuple(lowerTiles[i])  
         lowerTiles = tuple(lowerTiles)
@@ -70,44 +65,54 @@ class LevelData:
         
         for i in range(len(borders)):
             borders[i] = tuple(borders[i])  
-        borders = tuple(borders)                
-        
-        self.name = row[1]
-        self.size = (row[2],row[3])
-        self.lowerTiles = lowerTiles
-        self.upperTiles = upperTiles
+        borders = tuple(borders)
+
         self.borders = borders
-        
-    def addActor(self, actor):
-        self.actors = list(self.actors)
-        self.actors.append(actor)
-        self.actors = tuple(self.actors)
-    
-    def loadTileMaps(self, index):
-        tileMaps = database.getTileMaps(index) #expect lower, and upper
+
+        #load tilemap data from the DB
+        tileMaps = database.getTileMaps(index)  # expect lower, and upper
         if tileMaps is None or len(tileMaps) != 2:
             return False
-        
+
         if tileMaps[0][6] == 'lower':
             lower = 0
             upper = 1
         else:
             lower = 1
             upper = 0
-        
-        tileMapLower = Tilemap(tileMaps[lower][2], 
-                               tileMaps[lower][3], 
-                               (tileMaps[lower][4],tileMaps[0][5]),
-                               tileMaps[lower][6])
 
-        tileMapUpper = Tilemap(tileMaps[upper][2], 
-                               tileMaps[upper][3], 
-                               (tileMaps[upper][4],tileMaps[0][5]),
-                               tileMaps[upper][6])
-        
+        tileMapLower = Tilemap(tileMaps[lower][2],  # filepath
+                               tileMaps[lower][3],  # tilesize_px
+                               tileMaps[lower][4],  # height_tiles
+                               tileMaps[0][5],  # width_tiles
+                               lowerTiles,  # The mapping of each tile on the level to the iomage
+                               tileMaps[lower][6], # type
+                               False, # alpha
+                               False, # isAnimated
+                               0, # animatedIndex
+                               1, # Frames
+                               1) # fps
+
+        tileMapUpper = Tilemap(tileMaps[upper][2], # Filepath
+                               tileMaps[upper][3], # tilesize_px
+                               tileMaps[upper][4], # height_tiles
+                               tileMaps[0][5], # width_tiles
+                               upperTiles, # The mapping of each tile on the level to the iomage
+                               tileMaps[upper][6], # type
+                               False, # alpha
+                               False, # isAnimated
+                               0, # animatedIndex
+                               1, # Frames
+                               1) # fps
+
         self.lowerTileMap = tileMapLower
-        self.upperTileMap = tileMapUpper        
+        self.upperTileMap = tileMapUpper
+
         
+    def addActor(self, actor):
+        self.actors = list(self.actors)
+        self.actors.append(actor)
+        self.actors = tuple(self.actors)
     
     def loadLevelEvents(self, index):
         self.eventTiles = {}

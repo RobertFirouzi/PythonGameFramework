@@ -16,8 +16,6 @@ class Renderer:
         self.cameraPosition = (0,0)
         
         self.levelData = None
-        self.lowerTiles = []
-        self.upperTiles = []
         self.backgrounds = []
         self.foregrounds = []
         self.actors = []
@@ -29,8 +27,8 @@ class Renderer:
         self.renderedUpperTiles = {} 
         
         self.actorsDict = {} #reference to image files
-        self.lowerTileMap = None #image file
-        self.upperTileMap = None#image file
+        self.lowerTileMap = None # Object holds tile mapping and image data
+        self.upperTileMap = None # Object holds tile mapping and image data
         self.animatedPanorama = False
 
         self.renderQueue = []
@@ -44,8 +42,8 @@ class Renderer:
     def loadAssets(self, levelData):
         self.framecount = 0 #reset framecount
         self.levelData = levelData #TODO may not need this reference
-        self.lowerTiles = levelData.lowerTiles
-        self.upperTiles = levelData.upperTiles
+        self.lowerTileMap = levelData.lowerTileMap
+        self.upperTileMap = levelData.upperTileMap
         self.backgrounds = levelData.backgrounds
         self.foregrounds = levelData.foregrounds
         self.actors = levelData.actors
@@ -89,8 +87,10 @@ class Renderer:
                 foreground.motion_y_multiplier = foreground.motionY_pxs/PRAM.GAME_FPS
                 self.animatedPanorama = True
 
-        self.lowerTileMap = self.loadTilemap(levelData.lowerTileMap.filePath)
-        self.upperTileMap = self.loadTilemap(levelData.upperTileMap.filePath)
+        # self.lowerTileMap = self.loadTilemap(levelData.lowerTileMap.filePath)
+        # self.upperTileMap = self.loadTilemap(levelData.upperTileMap.filePath)
+
+        self.loadTileMapImages()
 
     #this will just render game levels - create a seperate method for menus, and perhaps cutscenes
     def render(self):
@@ -98,7 +98,7 @@ class Renderer:
         self.cameraOffset = self.camera.offset
         self.cameraPosition = self.camera.position
 
-        if len(self.lowerTiles)>0: #quick hack to make sure a level is loaded
+        if self.lowerTileMap is not None: #quick hack to make sure a level is loaded
             if self.camera.moveFlag or self.animatedPanorama: #know rend
                 strartime = time() #TODO debug
 
@@ -131,15 +131,16 @@ class Renderer:
 
         self.framecount+=1
 
-
     def renderAllLowerTile(self):
+        tiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
+        image = self.lowerTileMap.image
         for y in range(PRAM.DISPLAY_TILE_HEIGHT):
             yOffset = y * PRAM.TILESIZE - self.cameraOffset[1]
             for x in range(PRAM.DISPLAY_TILE_WIDTH):
-                tile = self.lowerTiles[y + self.cameraTile[1]][x + self.cameraTile[0]]
+                tile = tiles[y + self.cameraTile[1]][x + self.cameraTile[0]]
                 if tile[0] != -1: #-1 is blank
                     xOffset = x* PRAM.TILESIZE - self.cameraOffset[0]
-                    self.screen.blit(self.lowerTileMap, 
+                    self.screen.blit(image,
                                      (xOffset, yOffset), #screen position
                                      (tile[0], #tileMap x crop position
                                       tile[1], #tileMap y crop position
@@ -147,13 +148,15 @@ class Renderer:
                                      PRAM.TILESIZE)) #tilemap height
 
     def renderAllUpperTile(self):
+        tiles = self.upperTileMap.tiles #for efficiency, quick reference to ptr
+        image = self.upperTileMap.image
         for y in range(PRAM.DISPLAY_TILE_HEIGHT):
             yOffset = y * PRAM.TILESIZE - self.cameraOffset[1]
             for x in range(PRAM.DISPLAY_TILE_WIDTH):
-                tile = self.upperTiles[y + self.cameraTile[1]][x + self.cameraTile[0]]
+                tile = tiles[y + self.cameraTile[1]][x + self.cameraTile[0]]
                 if tile[0] != -1:
                     xOffset = x* PRAM.TILESIZE - self.cameraOffset[0]
-                    self.screen.blit(self.upperTileMap, 
+                    self.screen.blit(image,
                                      (xOffset, yOffset), #screen position
                                      (tile[0], #tileMap x crop position
                                       tile[1], #tileMap y crop position
@@ -161,14 +164,16 @@ class Renderer:
                                      PRAM.TILESIZE)) #tileMap height
 
     def renderChangedLowerTile(self):
+        tiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
+        image = self.lowerTileMap.image
         for box in self.renderQueue:
             xRange = (box[0]//PRAM.TILESIZE, box[1]//PRAM.TILESIZE)
             yRange = (box[2]//PRAM.TILESIZE, box[3]//PRAM.TILESIZE)
             for x in range(xRange[0], xRange[1]):
                 for y in range(yRange[0], yRange[1]):
-                    tile = self.lowerTiles[y][x]
+                    tile = tiles[y][x]
                     if self.renderedLowerTiles.get((y,x)) != True and tile[0] != -1:
-                        self.screen.blit(self.lowerTileMap,
+                        self.screen.blit(image,
                                          ((x - self.cameraTile[0]) * PRAM.TILESIZE  - self.cameraOffset[0], #x screen position
                                           (y - self.cameraTile[1]) * PRAM.TILESIZE  - self.cameraOffset[1]), #y screen position
                                          (tile[0], 
@@ -178,14 +183,16 @@ class Renderer:
                         self.renderedLowerTiles[(y,x)] = True
 
     def renderChangedUpperTile(self):
+        tiles = self.upperTileMap.tiles #for efficiency, quick reference to ptr
+        image = self.upperTileMap.image
         for box in self.renderQueue:
             xRange = (box[0]//PRAM.TILESIZE, box[1]//PRAM.TILESIZE)
             yRange = (box[2]//PRAM.TILESIZE, box[3]//PRAM.TILESIZE)
             for x in range(xRange[0], xRange[1]):
                 for y in range(yRange[0], yRange[1]):
-                    tile = self.upperTiles[y][x]
+                    tile = tiles[y][x]
                     if self.renderedUpperTiles.get((y,x)) != True and tile[0] !=-1:
-                        self.screen.blit(self.upperTileMap, 
+                        self.screen.blit(image,
                                          ((x - self.cameraTile[0]) * PRAM.TILESIZE  - self.cameraOffset[0],
                                          (y - self.cameraTile[1]) * PRAM.TILESIZE  - self.cameraOffset[1]),
                                          (tile[0],
@@ -443,9 +450,16 @@ class Renderer:
 
         self.renderQueue.append((minx, maxx, miny, maxy))
 
-    #Can't be static method, debugger calls through the render object
-    def loadTilemap(self, filePath):
-        return pygame.image.load(filePath).convert()
+    def loadTileMapImages(self):
+        if self.lowerTileMap.alpha:
+            self.lowerTileMap.image = pygame.image.load(self.lowerTileMap.filePath).convert_alpha()
+        else:
+            self.lowerTileMap.image = pygame.image.load(self.lowerTileMap.filePath).convert()
+
+        if self.upperTileMap.alpha:
+            self.upperTileMap.image = pygame.image.load(self.upperTileMap.filePath).convert_alpha()
+        else:
+            self.upperTileMap.image = pygame.image.load(self.upperTileMap.filePath).convert()
 
     #use pygame image.load, convert alpha if necessary, return the image file
     def loadPanorama(self, panorama):
@@ -472,7 +486,6 @@ class Renderer:
         avgRenderAllTime = round(renderAllSum/len(self.renderAllTimes)*1000,6)
         print('Avergae Render All time: ' +str(avgRenderAllTime) + 'ms')
         self.renderAllTimes = []
-
 
     def averageRenderChangedTime(self):
         renderChangeSum = 0
