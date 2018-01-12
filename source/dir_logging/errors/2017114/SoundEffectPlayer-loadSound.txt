@@ -1,4 +1,0 @@
-2017-11-04 20:30:30.457163 tried to reload [C:\Users\Robert\Desktop\repositories\GameDev\PythonGameDevelopment\swordFightProto\dir_sound\dir_soundeffects\ERROR.wav], but this already exists
-2017-11-04 20:30:30.463185 path [C:\Users\Robert\Desktop\repositories\GameDev\PythonGameDevelopment\swordFightProto\dir_sound\dir_soundeffects\click.wav] not found
-2017-11-04 20:31:50.750921 tried to reload [C:\Users\Robert\Desktop\repositories\GameDev\PythonGameDevelopment\swordFightProto\dir_sound\dir_soundeffects\ERROR.wav], but this already exists
-2017-11-04 20:31:50.756440 path [C:\Users\Robert\Desktop\repositories\GameDev\PythonGameDevelopment\swordFightProto\dir_sound\dir_soundeffects\click.wav] not found

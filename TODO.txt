@@ -1,5 +1,8 @@
 PROJECT CharmQuark 
 
+need to calculate framesPerImage in tilemap similar to panorama, then index into the offsets dtc for correct tile
+
+update object with all params (hard code in ones not from DB for now)
 algorithm already calculates pixel index based on tile index - how to rectify this for animated?
 	if coordinate over certain value, then recacluate tile per frame?  Sounds slow...
 	save the calculated frame values as lists in the tilemap container.  Use dictionary
@@ -7,7 +10,6 @@ algorithm already calculates pixel index based on tile index - how to rectify th
 	Y value of the index > animated cutoff, look up index from dictionary to get blit offset.
 
 add animation algorithm to blitting tiles
-
 
 metrics:
 render all ~9-10ms per loop

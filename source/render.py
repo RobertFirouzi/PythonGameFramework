@@ -131,19 +131,28 @@ class Renderer:
 
         self.framecount+=1
 
+    #TODO - assuming is animated, create seperate methods for animated and non animated tiles load correct on on level load
     def renderAllLowerTile(self):
         tiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
         image = self.lowerTileMap.image
+        animatedDivide_px = self.lowerTileMap.animatedDivide_px
+        animatedOffsets = self.animatedOffsets
         for y in range(PRAM.DISPLAY_TILE_HEIGHT):
             yOffset = y * PRAM.TILESIZE - self.cameraOffset[1]
             for x in range(PRAM.DISPLAY_TILE_WIDTH):
                 tile = tiles[y + self.cameraTile[1]][x + self.cameraTile[0]]
                 if tile[0] != -1: #-1 is blank
                     xOffset = x* PRAM.TILESIZE - self.cameraOffset[0]
+                    if tile[1] >= animatedDivide_px: #TODO calcualte framesPerImage like the background
+                        tilemap_x = tile[0]
+                        tilemap_y = tile[1]
+                    else:
+                        tilemap_x = tile[0]
+                        tilemap_y = tile[1]
                     self.screen.blit(image,
                                      (xOffset, yOffset), #screen position
-                                     (tile[0], #tileMap x crop position
-                                      tile[1], #tileMap y crop position
+                                     (tilemap_x, #tileMap x crop position
+                                      tilemap_y, #tileMap y crop position
                                      PRAM.TILESIZE, #tilemap  width
                                      PRAM.TILESIZE)) #tilemap height
 

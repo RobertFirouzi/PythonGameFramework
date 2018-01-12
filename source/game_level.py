@@ -51,18 +51,6 @@ class LevelData:
         upperTiles = json.loads(row[5])
         borders = json.loads(row[6])
         
-        lowerTiles = tilemapIndexToCoord(lowerTiles) #lower tiles
-        upperTiles = tilemapIndexToCoord(upperTiles) #upper tiles
-
-        #Convert to tuples for efficiency
-        for i in range(len(lowerTiles)):
-            lowerTiles[i] = tuple(lowerTiles[i])  
-        lowerTiles = tuple(lowerTiles)
-        
-        for i in range(len(upperTiles)):
-            upperTiles[i] = tuple(upperTiles[i])  
-        upperTiles = tuple(upperTiles)
-        
         for i in range(len(borders)):
             borders[i] = tuple(borders[i])  
         borders = tuple(borders)
@@ -81,7 +69,7 @@ class LevelData:
             lower = 1
             upper = 0
 
-        tileMapLower = Tilemap(tileMaps[lower][2],  # filepath
+        self.lowerTileMap = Tilemap(tileMaps[lower][2],  # filepath
                                tileMaps[lower][3],  # tilesize_px
                                tileMaps[lower][4],  # height_tiles
                                tileMaps[0][5],  # width_tiles
@@ -89,11 +77,11 @@ class LevelData:
                                tileMaps[lower][6], # type
                                False, # alpha
                                False, # isAnimated
-                               0, # animatedIndex
-                               1, # Frames
-                               1) # fps
+                               105, # animatedIndex
+                               6, # Frames
+                               4) # fps
 
-        tileMapUpper = Tilemap(tileMaps[upper][2], # Filepath
+        self.upperTileMap = Tilemap(tileMaps[upper][2], # Filepath
                                tileMaps[upper][3], # tilesize_px
                                tileMaps[upper][4], # height_tiles
                                tileMaps[0][5], # width_tiles
@@ -105,10 +93,7 @@ class LevelData:
                                1, # Frames
                                1) # fps
 
-        self.lowerTileMap = tileMapLower
-        self.upperTileMap = tileMapUpper
 
-        
     def addActor(self, actor):
         self.actors = list(self.actors)
         self.actors.append(actor)
@@ -187,22 +172,6 @@ class LevelData:
             self.foregrounds.append(panoramicImage)
 
         self.backgrounds = tuple(self.backgrounds)
-
-### STATIC FUNCTIONS ###
-
-#takes a tile list of integers, corresponding to a tilemap position
-#returns the list as a tuple of pixel coordinate pairs
-def tilemapIndexToCoord(data):
-    for i in range(len(data)):
-        for j in range(len(data[i])):
-            index = data[i][j]-1 #offset to start tilemap at 0 (first square is 1)
-            if index < 0: #blank tile:
-                data[i][j] = (-1,-1) #-1 is code for blank
-            else:
-                y_tile = index//PRAM.TILEMAP_MAX_WIDTH
-                x_tile = index - (y_tile * PRAM.TILEMAP_MAX_WIDTH)
-                data[i][j] = (x_tile*PRAM.TILESIZE, y_tile*PRAM.TILESIZE)
-    return data
 
 # Data container for a game menu, which can be loaded as an event (akin to loading a level).
 #     EG load the title screen, or options, save/load etc...

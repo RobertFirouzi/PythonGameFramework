@@ -79,6 +79,7 @@ class PanoramicImage():
 # If the tilemap contains animated tiles, the animated tiles begin at the highest index.  All frames are stored
 # sequentially in the tilemap image.  The tiles index will always reference the first tile in an animated group
 # Go througn the animated tiles sequence based on framecount
+# Must start at X = 0 for first animated tile (even if requires some blank tiles in the row above),
 # Although upper and lower stored in same DB row, this continer holds just one
 # Does not hold the borders info
 class Tilemap():
@@ -91,7 +92,7 @@ class Tilemap():
                  type = 'lower', #lower or upper tilemap
                  alpha = False, #True if contains alpha data
                  isAnimated = False, #if animated, some tiles contain multiple frames
-                 animatedIndex = 9, #the tiles at this index and higher are part of animated groups
+                 animatedIndex = 500, #the tiles below this y value are in the animated group
                  frames = 1, #how many frames there are in the animation, ie how many tiles in an animated group
                  fps = 1): #how fast the animation should play
         self.filePath = filePath
@@ -102,7 +103,7 @@ class Tilemap():
         self.type = type
         self.alpha = alpha
         self.isAnimated = isAnimated
-        self.animatedIndex = animatedIndex
+        self.animatedIndex = animatedIndex #passed in as a tile index, then re-calculated to the Y pixel value
         self.frames = frames
         self.fps = fps
 
@@ -110,6 +111,46 @@ class Tilemap():
         self.image = None
         self.framesPerImage = 1 #if animated, the number of frames per each image flip, calculated in renderer leve load
         self.frameIndex = 0 #tracks which frame to display, if tile is animated
-        self.animatedOffsets = {} #TODO - Use a dictionary to save lists of animate index values, referenced by the starting position
+        self.animatedOffsets = {} #series of offsets for each animated tile group
 
+        # any tile with a y value greater is part of an animated group
+        self.animatedDivide_px = ( (self.animatedIndex-1) // PRAM.TILEMAP_MAX_WIDTH) * PRAM.TILESIZE
 
+        #reformats the tile indexes to pixel coordinates, calculates animated offsets, comresses to tuple
+        self.tilemapIndexToCoord()
+        self.makeTileListTuple()
+
+    # takes a tile list of integers, corresponding to a tilemap position
+    # returns the list as a tuple of pixel coordinate pairs
+    def tilemapIndexToCoord(self):
+        for i in range(len(self.tiles)):
+            for j in range(len(self.tiles[i])):
+                index = self.tiles[i][j] - 1  # offset to start tilemap at 0 (first square is 1)
+
+                if index < 0:  # blank tile:
+                    self.tiles[i][j] = (-1, -1)  # -1 is code for blank
+
+                elif self.isAnimated and index >= self.animatedIndex - 1: #calculate the offset of each tile in the sequence
+                    y_reference = index // PRAM.TILEMAP_MAX_WIDTH
+                    x_reference = index - (y_tile * PRAM.TILEMAP_MAX_WIDTH)
+                    y_reference *= PRAM.TILESIZE
+                    x_reference *= PRAM.TILESIZE
+                    if self.animatedOffsets.get((x_reference, y_reference)) is None: #lookup the animated coordinates based on first tile
+                        offsets = []
+                        for i in range(self.frames):
+                            y_tile = (index+i) // PRAM.TILEMAP_MAX_WIDTH
+                            x_tile = (index+i) - (y_tile * PRAM.TILEMAP_MAX_WIDTH)
+                            offsets.append(x_tile * PRAM.TILESIZE, y_tile * PRAM.TILESIZE)
+                        offsets = tuple(offsets)
+                        self.animatedOffsets[(x_reference, y_reference)] = offsets #this is a sequence of tiles to iterate through
+
+                else: #calcu;ate the pixel offset of the tile
+                    y_tile = index // PRAM.TILEMAP_MAX_WIDTH
+                    x_tile = index - (y_tile * PRAM.TILEMAP_MAX_WIDTH)
+                    self.tiles[i][j] = (x_tile * PRAM.TILESIZE, y_tile * PRAM.TILESIZE)
+
+    #compreds the tile lists into tuples for efficiency
+    def makeTileListTuple(self):
+        for i in range(len(self.tiles)):
+            self.tiles[i] = tuple(self.tiles[i])
+        self.tiles = tuple(self.tiles)

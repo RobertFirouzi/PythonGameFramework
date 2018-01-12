@@ -1,2 +1,0 @@
-2017-11-04 20:30:30.509339 song [saga7-Wind] not found in dict
-2017-11-04 20:31:50.800591 song [saga7-Wind] not found in dict
