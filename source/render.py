@@ -109,7 +109,7 @@ class Renderer:
                 self.renderAllPanorama(BG = False)
 
                 self.renderAllTimes.append(time()-strartime) #TODO debug
-                if len(self.renderAllTimes)>100 and False: #TODO turned off for now
+                if len(self.renderAllTimes)>100:# and False: #TODO turned off for now
                     self.averageRenderAllTime()
             else:
                 strartime = time() #TODO debug
@@ -121,7 +121,7 @@ class Renderer:
                 self.renderChangedPanorama(BG = False)
 
                 self.renderChangedTimes.append(time() - strartime)  # TODO debug
-                if len(self.renderChangedTimes) > 100 and False: #TODO turned off for now
+                if len(self.renderChangedTimes) > 100:# and False: #TODO turned off for now
                     self.averageRenderChangedTime()
 
             self.renderQueue.clear()
@@ -159,16 +159,27 @@ class Renderer:
                                      PRAM.TILESIZE, #tilemap  width
                                      PRAM.TILESIZE)) #tilemap height
 
-    #TODO update with animated tiles
     def renderAllUpperTile(self):
         tiles = self.upperTileMap.tiles #for efficiency, quick reference to ptr
         image = self.upperTileMap.image
+        animatedDivide_px = self.upperTileMap.animatedDivide_px
+        animatedOffsets = self.upperTileMap.animatedOffsets
+        frameIndex = 0
+
+        if self.upperTileMap.isAnimated:
+            if int(self.framecount % self.upperTileMap.framesPerImage) == 0:  # time to change the pic
+                self.upperTileMap.updateFrameIndex()
+            frameIndex = self.upperTileMap.frameIndex
+
+
         for y in range(PRAM.DISPLAY_TILE_HEIGHT):
             yOffset = y * PRAM.TILESIZE - self.cameraOffset[1]
             for x in range(PRAM.DISPLAY_TILE_WIDTH):
                 tile = tiles[y + self.cameraTile[1]][x + self.cameraTile[0]]
                 if tile[0] != -1:
                     xOffset = x* PRAM.TILESIZE - self.cameraOffset[0]
+                    if tile[1] >= animatedDivide_px:
+                        tile = animatedOffsets.get((tile[0],tile[1]))[frameIndex]
                     self.screen.blit(image,
                                      (xOffset, yOffset), #screen position
                                      (tile[0], #tileMap x crop position

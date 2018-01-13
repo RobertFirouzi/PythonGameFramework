@@ -78,8 +78,8 @@ class LevelData:
                                False, # alpha
                                True, # isAnimated
                                105, # animatedIndex
-                               5, # Frames
-                               20) # fps
+                               6, # Frames
+                               5) # fps
 
         self.upperTileMap = Tilemap(tileMaps[upper][2], # Filepath
                                tileMaps[upper][3], # tilesize_px
@@ -88,10 +88,10 @@ class LevelData:
                                upperTiles, # The mapping of each tile on the level to the iomage
                                tileMaps[upper][6], # type
                                False, # alpha
-                               False, # isAnimated
-                               0, # animatedIndex
-                               1, # Frames
-                               1) # fps
+                               True, # isAnimated
+                               65, # animatedIndex
+                               4, # Frames
+                               2) # fps
 
 
     def addActor(self, actor):

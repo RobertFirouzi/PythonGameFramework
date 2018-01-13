@@ -14,7 +14,8 @@ from camera import GameCamera
 
 ### SETUP ###
 pygame.init()
-screen = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
+flags = pygame.DOUBLEBUF | pygame.HWSURFACE #| pygame.FULLSCREEN #TODO
+screen = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT), flags)
 CLOCK = pygame.time.Clock() 
 DONE = False
 
@@ -56,7 +57,7 @@ while not DONE:
         if game.runDebug:
             game.runDebugLoop() #if debug is activated ented debug mode
 
-        pygame.display.flip()
+        pygame.display.update() #TODO if passing updated recs, this is more efficient
         CLOCK.tick(GAME_FPS) #60 FPS
 
 #this will only run if the module is run as the main module, not if imported.

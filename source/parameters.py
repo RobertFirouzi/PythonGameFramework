@@ -25,8 +25,8 @@ of scrolling
 '''
 
 ### SCREEN ###
-DISPLAY_WIDTH = 1600 
-DISPLAY_HEIGHT = 900 
+DISPLAY_WIDTH = 1600 #TODO -lowering these greatly boosts performance
+DISPLAY_HEIGHT = 900
 TILESIZE = 48
 TILEMAP_MAX_WIDTH = 8 #tiles
 TILEMAP_MAX_HEIGHT = 20 # tiles 8*20 = 160 lower tiles and 160 upper tiles per map

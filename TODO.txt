@@ -1,10 +1,20 @@
 PROJECT CharmQuark 
 
-update render uppertiles for animated
-	or combine the upper tile/lower tile algorith
-		panorama too?
 update DB columns for animated tiles
+
+-GIT BRANCH--
+combine the upper tile/lower tile algorith
 some functions need to be moved to their respective objects for better encapsulation
+u[date the changed algorithm to work with moving panorama, animated panorama, and animated tiles
+
+fullscreen mode?
+	get screen res, keep same ratio and create black border around rest?  Then only update to the actual playing 	area
+	should also add ability to exit with escape key
+	
+
+if tiles are animated, either always animate all, or calculate the tile animation switch outside and render all on switches
+	this could work for animated backgrounds as well, though not moving
+	for moving, can add to render queue only the sections that are visible
 
 metrics:
 render all ~9-10ms per loop
@@ -59,10 +69,11 @@ Experiment with smaller screen size, number of layers, etc. for speed/performanc
 Need to eventually figure out better unit testing
 
 OPTIMIZATION
+use c types with numpy to create surfaces to blit?
 PRAMS all integers not strings
 render changed background for animated panoramas (complex algorithm, may not be worth it)
 can have pygame only get() relevant (chosen) events from the queue
-Double Buffering?
+For display.update, ifpassing recs, will not update entire screen (eg for render changed?)
 For the EventHandler dictionary, use a tuple and index into it by int (not a dict with string) 
 
 ACTORS
