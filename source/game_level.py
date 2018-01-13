@@ -76,10 +76,10 @@ class LevelData:
                                lowerTiles,  # The mapping of each tile on the level to the iomage
                                tileMaps[lower][6], # type
                                False, # alpha
-                               False, # isAnimated
+                               True, # isAnimated
                                105, # animatedIndex
-                               6, # Frames
-                               4) # fps
+                               5, # Frames
+                               20) # fps
 
         self.upperTileMap = Tilemap(tileMaps[upper][2], # Filepath
                                tileMaps[upper][3], # tilesize_px

@@ -61,7 +61,7 @@ class Renderer:
             if background.isAnimated:
                 self.animatedPanorama = True
                 background.image = self.loadAnimatedPanoramas(background)
-                background.framesPerImage = round(PRAM.GAME_FPS/background.animated_fps,2)
+                background.framesPerImage = round(PRAM.GAME_FPS/background.animated_fps,2) #TODO calculate within object
                 background.numbImages= len(background.image)
             else:
                 background.image = self.loadPanorama(background)
@@ -76,7 +76,7 @@ class Renderer:
             if foreground.isAnimated:
                 self.animatedPanorama = True
                 foreground.image = self.loadAnimatedPanoramas(foreground)
-                foreground.framesPerImage = round(PRAM.GAME_FPS/background.animated_fps,2)
+                foreground.framesPerImage = round(PRAM.GAME_FPS/foreground.animated_fps,2)
                 foreground.numbImages= len(foreground.image)
             else:
                 foreground.image = self.loadPanorama(foreground)
@@ -136,26 +136,30 @@ class Renderer:
         tiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
         image = self.lowerTileMap.image
         animatedDivide_px = self.lowerTileMap.animatedDivide_px
-        animatedOffsets = self.animatedOffsets
+        animatedOffsets = self.lowerTileMap.animatedOffsets
+        frameIndex = 0
+
+        if self.lowerTileMap.isAnimated:
+            if int(self.framecount % self.lowerTileMap.framesPerImage) == 0:  # time to change the pic
+                self.lowerTileMap.updateFrameIndex()
+            frameIndex = self.lowerTileMap.frameIndex
+
         for y in range(PRAM.DISPLAY_TILE_HEIGHT):
             yOffset = y * PRAM.TILESIZE - self.cameraOffset[1]
             for x in range(PRAM.DISPLAY_TILE_WIDTH):
                 tile = tiles[y + self.cameraTile[1]][x + self.cameraTile[0]]
                 if tile[0] != -1: #-1 is blank
                     xOffset = x* PRAM.TILESIZE - self.cameraOffset[0]
-                    if tile[1] >= animatedDivide_px: #TODO calcualte framesPerImage like the background
-                        tilemap_x = tile[0]
-                        tilemap_y = tile[1]
-                    else:
-                        tilemap_x = tile[0]
-                        tilemap_y = tile[1]
+                    if tile[1] >= animatedDivide_px:
+                        tile = animatedOffsets.get((tile[0],tile[1]))[frameIndex]
                     self.screen.blit(image,
                                      (xOffset, yOffset), #screen position
-                                     (tilemap_x, #tileMap x crop position
-                                      tilemap_y, #tileMap y crop position
+                                     (tile[0], #tileMap x crop position
+                                      tile[1], #tileMap y crop position
                                      PRAM.TILESIZE, #tilemap  width
                                      PRAM.TILESIZE)) #tilemap height
 
+    #TODO update with animated tiles
     def renderAllUpperTile(self):
         tiles = self.upperTileMap.tiles #for efficiency, quick reference to ptr
         image = self.upperTileMap.image

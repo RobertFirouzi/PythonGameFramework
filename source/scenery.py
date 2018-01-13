@@ -35,12 +35,12 @@ import parameters as PRAM
 # animated panorama filepath is to a directory of numbered pictures [0.<extension>, 1.<extension>, etc]
 # engine will go through all images in order at designated fps (frames per second)
 
-class PanoramicImage():
+class PanoramicImage:
     def __init__(self, 
                  filePath = '', 
-                 pxSize = [10,10],  
-                 visibleSections = [[0,200,0,200],[200,500,200,500]], 
-                 scrolling = [[1,1],[1,1]], 
+                 pxSize = (10,10),
+                 visibleSections = ([0,200,0,200],[200,500,200,500]),
+                 scrolling = ([1,1],[1,1]),
                  alpha = False,
                  layer= 0,
                  isMotion_X = False,
@@ -82,34 +82,37 @@ class PanoramicImage():
 # Must start at X = 0 for first animated tile (even if requires some blank tiles in the row above),
 # Although upper and lower stored in same DB row, this continer holds just one
 # Does not hold the borders info
-class Tilemap():
+# animatedOffsets dict stores reference to first animated tile in a series by coordinate pair, which loads a tuple
+# of coordinate pairs which are the animated tile sequence
+class Tilemap:
     def __init__(self,
                  filePath = '', #location of image to load
                  tileSize_px = 48,
                  height_tiles = 3,
                  width_tiles = 3,
                  tiles = ((0,0,0),(0,0,0),(0,0,0),), #this maps the location on the image to load based on tilesize
-                 type = 'lower', #lower or upper tilemap
+                 mapType = 'lower', #lower or upper tilemap
                  alpha = False, #True if contains alpha data
                  isAnimated = False, #if animated, some tiles contain multiple frames
                  animatedIndex = 500, #the tiles below this y value are in the animated group
-                 frames = 1, #how many frames there are in the animation, ie how many tiles in an animated group
+                 numbFrames = 1, #how many frames there are in the animation, ie how many tiles in an animated group
                  fps = 1): #how fast the animation should play
         self.filePath = filePath
         self.height_tiles = height_tiles
         self.width_tiles = width_tiles
         self.tileSize_px = tileSize_px
         self.tiles = tiles
-        self.type = type
+        self.mapType = mapType
         self.alpha = alpha
         self.isAnimated = isAnimated
-        self.animatedIndex = animatedIndex #passed in as a tile index, then re-calculated to the Y pixel value
-        self.frames = frames
+        self.animatedIndex = animatedIndex #passed in as a tile index, then re-calculated to the Y pixel value - is index of first animated tile
+        self.numbFrames = numbFrames #number of frames for animates tiles
         self.fps = fps
 
         #explicit declaration of class fields
         self.image = None
-        self.framesPerImage = 1 #if animated, the number of frames per each image flip, calculated in renderer leve load
+        # if animated, the number of frames per each image flip, calculated in renderer leve load
+        self.framesPerImage = round(PRAM.GAME_FPS/fps,2)
         self.frameIndex = 0 #tracks which frame to display, if tile is animated
         self.animatedOffsets = {} #series of offsets for each animated tile group
 
@@ -119,6 +122,9 @@ class Tilemap():
         #reformats the tile indexes to pixel coordinates, calculates animated offsets, comresses to tuple
         self.tilemapIndexToCoord()
         self.makeTileListTuple()
+
+    def updateFrameIndex(self):
+        self.frameIndex = (self.frameIndex + 1) % self.numbFrames
 
     # takes a tile list of integers, corresponding to a tilemap position
     # returns the list as a tuple of pixel coordinate pairs
@@ -132,15 +138,16 @@ class Tilemap():
 
                 elif self.isAnimated and index >= self.animatedIndex - 1: #calculate the offset of each tile in the sequence
                     y_reference = index // PRAM.TILEMAP_MAX_WIDTH
-                    x_reference = index - (y_tile * PRAM.TILEMAP_MAX_WIDTH)
+                    x_reference = index - (y_reference * PRAM.TILEMAP_MAX_WIDTH)
                     y_reference *= PRAM.TILESIZE
                     x_reference *= PRAM.TILESIZE
+                    self.tiles[i][j] = (x_reference, y_reference) #update the tile to coordinate pair
                     if self.animatedOffsets.get((x_reference, y_reference)) is None: #lookup the animated coordinates based on first tile
                         offsets = []
-                        for i in range(self.frames):
-                            y_tile = (index+i) // PRAM.TILEMAP_MAX_WIDTH
-                            x_tile = (index+i) - (y_tile * PRAM.TILEMAP_MAX_WIDTH)
-                            offsets.append(x_tile * PRAM.TILESIZE, y_tile * PRAM.TILESIZE)
+                        for k in range(self.numbFrames):
+                            y_tile = (index+k) // PRAM.TILEMAP_MAX_WIDTH
+                            x_tile = (index+k) - (y_tile * PRAM.TILEMAP_MAX_WIDTH)
+                            offsets.append((x_tile * PRAM.TILESIZE, y_tile * PRAM.TILESIZE))
                         offsets = tuple(offsets)
                         self.animatedOffsets[(x_reference, y_reference)] = offsets #this is a sequence of tiles to iterate through
 

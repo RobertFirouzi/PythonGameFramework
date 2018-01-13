@@ -1,30 +1,17 @@
 PROJECT CharmQuark 
 
-need to calculate framesPerImage in tilemap similar to panorama, then index into the offsets dtc for correct tile
-
-update object with all params (hard code in ones not from DB for now)
-algorithm already calculates pixel index based on tile index - how to rectify this for animated?
-	if coordinate over certain value, then recacluate tile per frame?  Sounds slow...
-	save the calculated frame values as lists in the tilemap container.  Use dictionary
-	based on starting index, which can be used to calculate an indexed list.  then if the
-	Y value of the index > animated cutoff, look up index from dictionary to get blit offset.
-
-add animation algorithm to blitting tiles
+update render uppertiles for animated
+	or combine the upper tile/lower tile algorith
+		panorama too?
+update DB columns for animated tiles
+some functions need to be moved to their respective objects for better encapsulation
 
 metrics:
 render all ~9-10ms per loop
 render changed: 0.07-0.1ms per loop
 over 100 times faster to render changed!
 
-renderAllTiles upper and lower can be combined to one method (with passing 1 param)
-
 features:
-Animate Tiles
-	can have an animated tilemap set, and static tilemap image
-		based on index, which one to load is known.
-		based on framcount and fps of tilemap, can know which animated tilemap image to use
-		can blit all onto one surface, and calculate the postion of blit based in index, fps, framecount
-			(so animated tiles have several entries on the one tilemap)
 Sprites for actors
 Animate actors
 Weather or other visual ambient affects
@@ -62,6 +49,8 @@ sound logging/error checking is overboard, proably don't need now that things ar
 RENDER
 make renderLevel (render menu, cutscene, etc) their own methods.  Set the game.render method
 on a load (removes a branch from render, cleans up code)
+	can make seperate functions for whether tiles/panoramas are animated, then upate the refernece in render
+	when loading a level - cleans up code and removes some branches during render()
 
 TESTING:
 Render changed may have bugs not uncovered (like the overshoot/negative bug).  investigate
@@ -85,7 +74,6 @@ TOOLS
 GIMP - learn mainly for transparency effect, then try to put in with transparency to pygame
 
 ANIMATION
-Tiles
 Actors
 
 HUD
