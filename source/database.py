@@ -31,6 +31,8 @@ def getLevelData(index):
 #expect two entries, one for lower and one for upper
 #col[0] = tilemap_index, col[1] = level_key, col[2] = file_path
 #col[3] = tilesize col[4] = height col[5] = width col[6] = type
+#col[7] = isAlpha  col[8] = isAnimated col[9] = animatedIndex
+#col[10] = frames col[11] = fps
 def getTileMaps(key):
     query = "SELECT * FROM TileMaps WHERE level_key = {}".format(key)
     conn = openDB(DB_LOCATION)

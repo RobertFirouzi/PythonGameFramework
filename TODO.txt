@@ -1,11 +1,10 @@
 PROJECT CharmQuark 
 
-update DB columns for animated tiles
-
 -GIT BRANCH--
 combine the upper tile/lower tile algorith
 some functions need to be moved to their respective objects for better encapsulation
-u[date the changed algorithm to work with moving panorama, animated panorama, and animated tiles
+update the changed algorithm to work with moving panorama, animated panorama, and animated tiles
+profile the code (find the slowest parts)
 
 fullscreen mode?
 	get screen res, keep same ratio and create black border around rest?  Then only update to the actual playing 	area

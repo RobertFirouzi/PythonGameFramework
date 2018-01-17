@@ -58,7 +58,7 @@ class LevelData:
         self.borders = borders
 
         #load tilemap data from the DB
-        tileMaps = database.getTileMaps(index)  # expect lower, and upper
+        tileMaps = database.getTileMaps(index)  # expect lower, and upper as list
         if tileMaps is None or len(tileMaps) != 2:
             return False
 
@@ -75,11 +75,11 @@ class LevelData:
                                tileMaps[0][5],  # width_tiles
                                lowerTiles,  # The mapping of each tile on the level to the iomage
                                tileMaps[lower][6], # type
-                               False, # alpha
-                               True, # isAnimated
-                               105, # animatedIndex
-                               6, # Frames
-                               5) # fps
+                               tileMaps[lower][7], # alpha
+                               tileMaps[lower][8], # isAnimated
+                               tileMaps[lower][9], # animatedIndex
+                               tileMaps[lower][10], # Frames
+                               tileMaps[lower][11]) # fps
 
         self.upperTileMap = Tilemap(tileMaps[upper][2], # Filepath
                                tileMaps[upper][3], # tilesize_px
@@ -87,11 +87,11 @@ class LevelData:
                                tileMaps[0][5], # width_tiles
                                upperTiles, # The mapping of each tile on the level to the iomage
                                tileMaps[upper][6], # type
-                               False, # alpha
-                               True, # isAnimated
-                               65, # animatedIndex
-                               4, # Frames
-                               2) # fps
+                               tileMaps[upper][7], # alpha
+                               tileMaps[upper][8], # isAnimated
+                               tileMaps[upper][9], # animatedIndex
+                               tileMaps[upper][10], # Frames
+                               tileMaps[upper][11]) # fps
 
 
     def addActor(self, actor):
