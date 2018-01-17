@@ -5,6 +5,7 @@ import parameters as PRAM
 import os #Temporary fix to load animated bakground images - remove after DB updated
 from time import time
 
+#renderMethods list populated by game depending on the needs of the currently loaded level/menu
 class Renderer:
     def __init__(self, screen):
         self.screen = screen
@@ -32,12 +33,14 @@ class Renderer:
         self.animatedPanorama = False
 
         self.renderQueue = []
-
         self.framecount = 0 #a running count of frame ticks to animate images
 
         #Lists to hold calculated render times for metrics - debug only
         self.renderAllTimes = [] #TODO debud code for metrics
         self.renderChangedTimes = [] #TODO debud code for metrics
+
+        self.renderChangedMethods = [] #This will be the list of render functions to run
+        self.renderAllMethods = []
 
     def loadAssets(self, levelData):
         self.framecount = 0 #reset framecount
@@ -130,6 +133,28 @@ class Renderer:
             self.camera.moveFlag = False
 
         self.framecount+=1
+
+    #depending on the level, certain render methods will be loaded
+    #if a level has animated panoramas, or tiles, use those methods.  Else the simpler methods.
+    #add the render call for weather effects, etc if necessary
+    def renderList(self): #TODO
+        self.cameraTile= self.camera.tile
+        self.cameraOffset = self.camera.offset
+        self.cameraPosition = self.camera.position
+
+        if self.camera.moveFlag or self.animatedPanorama:
+            for method in self.renderAllMethods:
+                method()
+        else:
+            for method in self.renderChangedMethods:
+                method()
+
+        self.renderQueue.clear()
+        self.renderedLowerTiles.clear()
+        self.renderedUpperTiles.clear()
+        self.camera.moveFlag = False
+
+        self.framecount += 1
 
     #TODO - assuming is animated, create seperate methods for animated and non animated tiles load correct on on level load
     def renderAllLowerTile(self):

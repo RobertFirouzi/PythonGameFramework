@@ -1,7 +1,8 @@
 PROJECT CharmQuark 
+*On a branch called encapsulate..
 
--GIT BRANCH--
 combine the upper tile/lower tile algorith
+add methods to render list from game object
 some functions need to be moved to their respective objects for better encapsulation
 update the changed algorithm to work with moving panorama, animated panorama, and animated tiles
 profile the code (find the slowest parts)
