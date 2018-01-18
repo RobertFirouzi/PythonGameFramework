@@ -35,10 +35,6 @@ class Renderer:
         self.renderQueue = []
         self.framecount = 0 #a running count of frame ticks to animate images
 
-        #Lists to hold calculated render times for metrics - debug only
-        self.renderAllTimes = [] #TODO debud code for metrics
-        self.renderChangedTimes = [] #TODO debud code for metrics
-
         self.renderChangedMethods = [] #This will be the list of render functions to run
         self.renderAllMethods = []
 
@@ -103,29 +99,18 @@ class Renderer:
 
         if self.lowerTileMap is not None: #quick hack to make sure a level is loaded
             if self.camera.moveFlag or self.animatedPanorama: #know rend
-                strartime = time() #TODO debug
-
                 self.renderAllPanorama(BG = True)
                 self.renderAllLowerTile()
                 self.renderAllActors()
                 self.renderAllUpperTile()
                 self.renderAllPanorama(BG = False)
 
-                # self.renderAllTimes.append(time()-strartime) #TODO debug
-                if len(self.renderAllTimes)>100 and False: #TODO turned off for now
-                    self.averageRenderAllTime()
             else:
-                strartime = time() #TODO debug
-
                 self.renderChangedPanorama(BG = True)
                 self.renderChangedLowerTile()
                 self.renderChangedActors()
                 self.renderChangedUpperTile()
                 self.renderChangedPanorama(BG = False)
-
-                # self.renderChangedTimes.append(time() - strartime)  # TODO debug
-                if len(self.renderChangedTimes) > 100 and False: #TODO turned off for now
-                    self.averageRenderChangedTime()
 
             self.renderQueue.clear()
             self.renderedLowerTiles.clear()
@@ -527,19 +512,3 @@ class Renderer:
                 convertedImages.append(pygame.image.load(panorama.filePath+'\\' +image).convert())
         convertedImages = tuple(convertedImages)
         return convertedImages
-
-    def averageRenderAllTime(self):
-        renderAllSum = 0
-        for atime in self.renderAllTimes:
-            renderAllSum += atime
-        avgRenderAllTime = round(renderAllSum/len(self.renderAllTimes)*1000,6)
-        print('Avergae Render All time: ' +str(avgRenderAllTime) + 'ms')
-        self.renderAllTimes = []
-
-    def averageRenderChangedTime(self):
-        renderChangeSum = 0
-        for atime in self.renderChangedTimes:
-            renderChangeSum += atime
-        avgRenderChangeTime = round(renderChangeSum /len(self.renderChangedTimes)*1000,6)
-        print('Avergae Render Changed  time: ' +str(avgRenderChangeTime) + 'ms')
-        self.renderChangedTimes = []
