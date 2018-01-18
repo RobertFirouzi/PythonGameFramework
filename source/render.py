@@ -111,8 +111,8 @@ class Renderer:
                 self.renderAllUpperTile()
                 self.renderAllPanorama(BG = False)
 
-                self.renderAllTimes.append(time()-strartime) #TODO debug
-                if len(self.renderAllTimes)>100:# and False: #TODO turned off for now
+                # self.renderAllTimes.append(time()-strartime) #TODO debug
+                if len(self.renderAllTimes)>100 and False: #TODO turned off for now
                     self.averageRenderAllTime()
             else:
                 strartime = time() #TODO debug
@@ -123,8 +123,8 @@ class Renderer:
                 self.renderChangedUpperTile()
                 self.renderChangedPanorama(BG = False)
 
-                self.renderChangedTimes.append(time() - strartime)  # TODO debug
-                if len(self.renderChangedTimes) > 100:# and False: #TODO turned off for now
+                # self.renderChangedTimes.append(time() - strartime)  # TODO debug
+                if len(self.renderChangedTimes) > 100 and False: #TODO turned off for now
                     self.averageRenderChangedTime()
 
             self.renderQueue.clear()
@@ -512,7 +512,7 @@ class Renderer:
 
     #use pygame image.load, convert alpha if necessary, return the image file
     def loadPanorama(self, panorama):
-        if panorama.alpha == True:
+        if panorama.alpha:
             return (pygame.image.load(panorama.filePath).convert_alpha(),) #tuple of one item
         else:
             return (pygame.image.load(panorama.filePath).convert(),)
@@ -521,7 +521,7 @@ class Renderer:
         images = os.listdir(panorama.filePath)
         convertedImages = []
         for image in images:
-            if panorama.alpha == True:
+            if panorama.alpha:
                 convertedImages.append(pygame.image.load(panorama.filePath+'\\' +image).convert_alpha())
             else:
                 convertedImages.append(pygame.image.load(panorama.filePath+'\\' +image).convert())
