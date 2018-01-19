@@ -59,35 +59,24 @@ class Renderer:
         for background in self.backgrounds:
             if background.isAnimated:
                 self.animatedPanorama = True
-                background.image = self.loadAnimatedPanoramas(background)
-                background.framesPerImage = round(PRAM.GAME_FPS/background.animated_fps,2) #TODO calculate within object
-                background.numbImages= len(background.image)
+                background.image = loadAnimatedPanoramas(background)
             else:
-                background.image = self.loadPanorama(background)
+                background.image = loadPanorama(background)
             if background.isMotion_X:
-                background.motion_x_multiplier = background.motionX_pxs/PRAM.GAME_FPS
                 self.animatedPanorama = True
             if background.isMotion_Y:
-                background.motion_y_multiplier = background.motionY_pxs/PRAM.GAME_FPS
                 self.animatedPanorama = True
 
         for foreground in self.foregrounds:
             if foreground.isAnimated:
                 self.animatedPanorama = True
-                foreground.image = self.loadAnimatedPanoramas(foreground)
-                foreground.framesPerImage = round(PRAM.GAME_FPS/foreground.animated_fps,2)
-                foreground.numbImages= len(foreground.image)
+                foreground.image = loadAnimatedPanoramas(foreground)
             else:
-                foreground.image = self.loadPanorama(foreground)
+                foreground.image = loadPanorama(foreground)
             if foreground.isMotion_X:
-                foreground.motion_x_multiplier = foreground.motionX_pxs/PRAM.GAME_FPS
                 self.animatedPanorama = True
             if foreground.isMotion_Y:
-                foreground.motion_y_multiplier = foreground.motionY_pxs/PRAM.GAME_FPS
                 self.animatedPanorama = True
-
-        # self.lowerTileMap = self.loadTilemap(levelData.lowerTileMap.filePath)
-        # self.upperTileMap = self.loadTilemap(levelData.upperTileMap.filePath)
 
         self.loadTileMapImages()
 
@@ -122,7 +111,7 @@ class Renderer:
     #depending on the level, certain render methods will be loaded
     #if a level has animated panoramas, or tiles, use those methods.  Else the simpler methods.
     #add the render call for weather effects, etc if necessary
-    def renderList(self): #TODO
+    def renderList(self): #TODO - not usre if going with this idea or not
         self.cameraTile= self.camera.tile
         self.cameraOffset = self.camera.offset
         self.cameraPosition = self.camera.position
@@ -259,7 +248,7 @@ class Renderer:
 
             if fg.isAnimated:
                 if int(self.framecount%fg.framesPerImage)==0: #time to change the pic
-                    fg.imageIndex = (fg.imageIndex + 1)%fg.numbImages
+                    fg.updateFrameIndex()
                 displayImage = fg.image[fg.imageIndex]
             else:
                 displayImage = fg.image[0]
@@ -464,7 +453,7 @@ class Renderer:
             maxx = destination[0] + size[0]
             maxy = destination[1] + size[1]
         
-        mapSizeX = self.levelData.size[1] * PRAM.TILESIZE
+        mapSizeX = self.levelData.size[1] * PRAM.TILESIZE #TODO save this as a levelData parameter?
         mapSizeY = self.levelData.size[0] * PRAM.TILESIZE
         
         #get the entire tile
@@ -495,20 +484,20 @@ class Renderer:
         else:
             self.upperTileMap.image = pygame.image.load(self.upperTileMap.filePath).convert()
 
-    #use pygame image.load, convert alpha if necessary, return the image file
-    def loadPanorama(self, panorama):
-        if panorama.alpha:
-            return (pygame.image.load(panorama.filePath).convert_alpha(),) #tuple of one item
-        else:
-            return (pygame.image.load(panorama.filePath).convert(),)
+#use pygame image.load, convert alpha if necessary, return the image file
+def loadPanorama(panorama):
+    if panorama.alpha:
+        return (pygame.image.load(panorama.filePath).convert_alpha(),) #tuple of one item
+    else:
+        return (pygame.image.load(panorama.filePath).convert(),)
 
-    def loadAnimatedPanoramas(self, panorama):
-        images = os.listdir(panorama.filePath)
-        convertedImages = []
-        for image in images:
-            if panorama.alpha:
-                convertedImages.append(pygame.image.load(panorama.filePath+'\\' +image).convert_alpha())
-            else:
-                convertedImages.append(pygame.image.load(panorama.filePath+'\\' +image).convert())
-        convertedImages = tuple(convertedImages)
-        return convertedImages
+#Images are named "0.<type>", "1.<type>", etc...
+def loadAnimatedPanoramas(panorama):
+    convertedImages = []
+    for i in range(panorama.numbImages):
+        if panorama.alpha:
+            convertedImages.append(pygame.image.load(panorama.filePath+'\\' +str(i)+'.'+panorama.imageType).convert_alpha())
+        else:
+            convertedImages.append(pygame.image.load(panorama.filePath+'\\' +str(i)+'.'+panorama.imageType).convert())
+    convertedImages = tuple(convertedImages)
+    return convertedImages

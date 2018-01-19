@@ -48,7 +48,9 @@ class PanoramicImage:
                  motionX_pxs = 0,
                  motionY_pxs = 0,
                  isAnimated = False,
-                 animated_fps = 0):
+                 animated_fps = 0,
+                 numbImages = 1,
+                 imageType = 'png'):
         self.filePath = filePath
         self.pxSize = pxSize
         self.visibleSections = visibleSections
@@ -61,16 +63,19 @@ class PanoramicImage:
         self.motionY_pxs = motionY_pxs
         self.isAnimated = isAnimated
         self.animated_fps = animated_fps
+        self.numbImages = numbImages
+        self.imageType = imageType
 
         #explicit declaration of class fields
         self.image = None # the image date
 
-        self.motion_x_multiplier = 0 #calculated by the Renderer on level load based on Game FPS
-        self.motion_y_multiplier = 0
-        self.framesPerImage = 1 #if animated, the number of frames per each image flip, calculated in renderer leve load
-        self.numbImages = 1 #calculated when loaded
+        self.motion_x_multiplier = motionX_pxs/PRAM.GAME_FPS #calculated by the Renderer on level load based on Game FPS
+        self.motion_y_multiplier = motionY_pxs/PRAM.GAME_FPS
+        self.framesPerImage = round(PRAM.GAME_FPS / self.animated_fps, 2)
         self.imageIndex = 0 #tracks which image to display, if animated
 
+    def updateFrameIndex(self):
+        self.imageIndex = (self.imageIndex + 1) % self.numbImages
 
 # Class to contain data for a tilemap
 # The tiles are stored in 1 image file. To blit a tile correctly, use tiles index -

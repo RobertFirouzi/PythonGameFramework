@@ -98,7 +98,7 @@ class LevelData:
         self.actors = list(self.actors)
         self.actors.append(actor)
         self.actors = tuple(self.actors)
-    
+
     def loadLevelEvents(self, index):
         self.eventTiles = {}
         print(index) #temp code to remove warning from pycharm, remove once method is implemented
@@ -106,14 +106,14 @@ class LevelData:
 
     def loadGameEvents(self, index):
         pass
-    
+
     def loadActors(self, index):
         pass
-    
+
     def loadBackgrounds(self, index):
         self.backgrounds = list()
         backgrounds = database.getBackgrounds(index)
-        
+
         for background in backgrounds:
             visibleSections = json.loads(background[5]) #unpack the strings into 2d lists
             for i in range(len(visibleSections)): #change to tuple for speed
@@ -136,8 +136,10 @@ class LevelData:
                                              background[11], #motionX_pxs
                                              background[12], #motionY_pxs
                                              background[13], #isAnimated
-                                             background[14])  #fps
-            
+                                             background[14], #fps
+                                             background[15], #numbImages
+                                             background[16])  #imageType
+
             self.backgrounds.append(panoramicImage)
         self.backgrounds = tuple(self.backgrounds)
     
