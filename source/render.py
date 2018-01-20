@@ -472,9 +472,9 @@ class Renderer:
                 actor.changed = False
         return
 
-    #Based on start and end position, and actor size, add a bounding box to the
-    #renderQueue (in pixels) for a section of the gameLevel that needs to be
-    #rendered on the render changes call
+    #Based on start and end position, and actor size, add a bounding box to the renderQueue (in pixels)
+    # for a section of the gameLevel that needs to be rendered on the render changes call
+    # #also, adds to the tileRenderQueues any tiles in the box
     def addRenderBox(self, size, origin, destination, direction):
         if direction == PRAM.UP:
             minx = origin[0]
@@ -518,6 +518,7 @@ class Renderer:
         renderBox = (minx, maxx, miny, maxy)
         self.renderQueue.append(renderBox) #for panorama rendering
 
+        #Add the affected tiles to the render queues
         xRange = (renderBox[0]//PRAM.TILESIZE, renderBox[1]//PRAM.TILESIZE)
         yRange = (renderBox[2]//PRAM.TILESIZE, renderBox[3]//PRAM.TILESIZE)
         for x in range(xRange[0], xRange[1]):
@@ -529,27 +530,52 @@ class Renderer:
                 if self.renderedUpperTiles.get((y,x)) != True and upperTile[0] != -1:
                     self.renderedUpperTiles[(y,x)] = False
 
-    #Adds a render box around each animated tile that is changing
-    #TODO need to break appart render box methods
     def addAnimatedLowerTilesRenderBoxes(self):
-        tiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
+        lowerTiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
+        upperTiles = self.upperTileMap.tiles
         animatedDivide_px = self.lowerTileMap.animatedDivide_px
+        cameraTile = self.cameraTile
 
         for y in range(PRAM.DISPLAY_TILE_HEIGHT):
-            yOffset = y * PRAM.TILESIZE - self.cameraOffset[1]
+            miny = (y + cameraTile[1]) * PRAM.TILESIZE
+            maxy = miny + PRAM.TILESIZE
+            tileOffset_y = y + cameraTile[1]
             for x in range(PRAM.DISPLAY_TILE_WIDTH):
-                tile = tiles[y + self.cameraTile[1]][x + self.cameraTile[0]]
-                if tile[0] != -1:
-                    if tile[1] >= animatedDivide_px:
-                        ypixel = (y + self.cameraTile[1])*PRAM.TILESIZE
-                        xpixel = (x + self.cameraTile[0])*PRAM.TILESIZE
-                        xOffset = x * PRAM.TILESIZE - self.cameraOffset[0]
-                        #TODO origina and destination are baes on absolute pixel position of level, not screen offsets
-                        self.addRenderBox((PRAM.TILESIZE, PRAM.TILESIZE),(xpixel, ypixel) ,(xpixel, ypixel) , PRAM.UP)
+                tileOffset_x = x + cameraTile[0]
+                lowerTile = lowerTiles[tileOffset_y][tileOffset_x]
+                if lowerTile[0] != -1:
+                    if lowerTile[1] >= animatedDivide_px:
+                        minx = (x + cameraTile[0])*PRAM.TILESIZE
+                        maxx = minx+PRAM.TILESIZE
+                        self.renderQueue.append((minx, maxx, miny, maxy))  # for panorama rendering
+                        self.renderedLowerTiles[(tileOffset_y, tileOffset_x)] = False
+                        upperTile = upperTiles[tileOffset_y][tileOffset_x]
+                        if upperTile[0] != -1:
+                            self.renderedUpperTiles[(tileOffset_y, tileOffset_x)] = False #If we re-render lower, must also do upper
 
 
     def addAnimatedUpperTilesRenderBoxes(self):
-        pass
+        lowerTiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
+        upperTiles = self.upperTileMap.tiles
+        animatedDivide_px = self.upperTileMap.animatedDivide_px
+        cameraTile = self.cameraTile
+
+        for y in range(PRAM.DISPLAY_TILE_HEIGHT):
+            miny = (y + cameraTile[1]) * PRAM.TILESIZE
+            maxy = miny + PRAM.TILESIZE
+            tileOffset_y = y + cameraTile[1]
+            for x in range(PRAM.DISPLAY_TILE_WIDTH):
+                tileOffset_x = x + cameraTile[0]
+                upperTile = upperTiles[tileOffset_y][tileOffset_x]
+                if upperTile[0] != -1:
+                    if upperTile[1] >= animatedDivide_px:
+                        minx = (x + cameraTile[0])*PRAM.TILESIZE
+                        maxx = minx+PRAM.TILESIZE
+                        self.renderQueue.append((minx, maxx, miny, maxy))  # for panorama rendering
+                        self.renderedUpperTiles[(tileOffset_y, tileOffset_x)] = False
+                        lowerTile = lowerTiles[tileOffset_y][tileOffset_x]
+                        if lowerTile[0] != -1:
+                            self.renderedLowerTiles[(tileOffset_y, tileOffset_x)] = False #If we re-render upper, must also do lower
 
 
     def loadTileMapImages(self):
