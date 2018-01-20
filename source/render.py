@@ -475,7 +475,7 @@ class Renderer:
     #Based on start and end position, and actor size, add a bounding box to the renderQueue (in pixels)
     # for a section of the gameLevel that needs to be rendered on the render changes call
     # #also, adds to the tileRenderQueues any tiles in the box
-    def addRenderBox(self, size, origin, destination, direction):
+    def addRenderBox_movedSprite(self, size, origin, destination, direction):
         if direction == PRAM.UP:
             minx = origin[0]
             miny = destination[1]
