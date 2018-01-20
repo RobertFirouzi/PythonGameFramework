@@ -121,14 +121,14 @@ class Renderer:
             if int(self.framecount % self.lowerTileMap.framesPerImage) == 0:  # time to change the pic
                 self.lowerTileMap.updateFrameIndex()
                 if not self.isRenderAll: #if everything is being rendered, don't need to add to changed q
-                    pass
+                    self.addAnimatedLowerTilesRenderBoxes()
                     #TODO - update the render queue with any tiles onscreen which are animated
 
         if self.upperTileMap.isAnimated:
             if int(self.framecount % self.upperTileMap.framesPerImage) == 0:  # time to change the pic
                 self.upperTileMap.updateFrameIndex()
                 if not self.isRenderAll:
-                    pass
+                    self.addAnimatedUpperTilesRenderBoxes()
                     # TODO - update the render queue with any tiles onscreen which are animated
 
         for bg in self.backgrounds:
@@ -216,55 +216,23 @@ class Renderer:
                                      PRAM.TILESIZE, #tileMap width
                                      PRAM.TILESIZE)) #tileMap height
 
-    def renderChangedLowerTile_deprecated(self):
-        tiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
-        image = self.lowerTileMap.image
-        for box in self.renderQueue:
-            xRange = (box[0]//PRAM.TILESIZE, box[1]//PRAM.TILESIZE)
-            yRange = (box[2]//PRAM.TILESIZE, box[3]//PRAM.TILESIZE)
-            for x in range(xRange[0], xRange[1]):
-                for y in range(yRange[0], yRange[1]):
-                    tile = tiles[y][x]
-                    if self.renderedLowerTiles.get((y,x)) != True and tile[0] != -1:
-                        self.screen.blit(image,
-                                         ((x - self.cameraTile[0]) * PRAM.TILESIZE  - self.cameraOffset[0], #x screen position
-                                          (y - self.cameraTile[1]) * PRAM.TILESIZE  - self.cameraOffset[1]), #y screen position
-                                         (tile[0], 
-                                          tile[1], 
-                                         PRAM.TILESIZE, 
-                                         PRAM.TILESIZE)) #blit one tile
-                        self.renderedLowerTiles[(y,x)] = True
-    def renderChangedUpperTile_deprecated(self):
-        tiles = self.upperTileMap.tiles #for efficiency, quick reference to ptr
-        image = self.upperTileMap.image
-        for box in self.renderQueue:
-            xRange = (box[0]//PRAM.TILESIZE, box[1]//PRAM.TILESIZE)
-            yRange = (box[2]//PRAM.TILESIZE, box[3]//PRAM.TILESIZE)
-            for x in range(xRange[0], xRange[1]):
-                for y in range(yRange[0], yRange[1]):
-                    tile = tiles[y][x]
-                    if self.renderedUpperTiles.get((y,x)) != True and tile[0] !=-1:
-                        self.screen.blit(image,
-                                         ((x - self.cameraTile[0]) * PRAM.TILESIZE  - self.cameraOffset[0],
-                                         (y - self.cameraTile[1]) * PRAM.TILESIZE  - self.cameraOffset[1]),
-                                         (tile[0],
-                                          tile[1],
-                                          PRAM.TILESIZE,
-                                          PRAM.TILESIZE))
-                        self.renderedUpperTiles[(y,x)] = True
 
     def renderChangedLowerTile(self):
         tiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
         image = self.lowerTileMap.image
+        animatedDivide_px = self.lowerTileMap.animatedDivide_px
+        animatedOffsets = self.lowerTileMap.animatedOffsets
 
         if self.lowerTileMap.isAnimated:
-            frameIndex = self.upperTileMap.frameIndex
+            frameIndex = self.lowerTileMap.frameIndex
         else:
             frameIndex = 0
 
         for changedTile, isRendered in self.renderedLowerTiles.items():
             if not isRendered:
                 tile = tiles[changedTile[0]][changedTile[1]] #the tilemap image location
+                if tile[1] >= animatedDivide_px:
+                    tile = animatedOffsets.get((tile[0], tile[1]))[frameIndex]
                 self.screen.blit(image,
                                  ((changedTile[1]  - self.cameraTile[0]) * PRAM.TILESIZE  - self.cameraOffset[0], #x screen position
                                   (changedTile[0] - self.cameraTile[1]) * PRAM.TILESIZE  - self.cameraOffset[1]), #y screen position
@@ -278,9 +246,20 @@ class Renderer:
     def renderChangedUpperTile(self):
         tiles = self.upperTileMap.tiles #for efficiency, quick reference to ptr
         image = self.upperTileMap.image
+
+        animatedDivide_px = self.upperTileMap.animatedDivide_px
+        animatedOffsets = self.upperTileMap.animatedOffsets
+
+        if self.upperTileMap.isAnimated:
+            frameIndex = self.upperTileMap.frameIndex
+        else:
+            frameIndex = 0
+
         for changedTile, isRendered in self.renderedUpperTiles.items():
             if not isRendered:
                 tile = tiles[changedTile[0]][changedTile[1]] #the tilemap image location
+                if tile[1] >= animatedDivide_px:
+                    tile = animatedOffsets.get((tile[0], tile[1]))[frameIndex]
                 self.screen.blit(image,
                                  ((changedTile[1]  - self.cameraTile[0]) * PRAM.TILESIZE  - self.cameraOffset[0], #x screen position
                                   (changedTile[0] - self.cameraTile[1]) * PRAM.TILESIZE  - self.cameraOffset[1]), #y screen position
@@ -549,6 +528,28 @@ class Renderer:
                     self.renderedLowerTiles[(y,x)] = False
                 if self.renderedUpperTiles.get((y,x)) != True and upperTile[0] != -1:
                     self.renderedUpperTiles[(y,x)] = False
+
+    #Adds a render box around each animated tile that is changing
+    #TODO need to break appart render box methods
+    def addAnimatedLowerTilesRenderBoxes(self):
+        tiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
+        animatedDivide_px = self.lowerTileMap.animatedDivide_px
+
+        for y in range(PRAM.DISPLAY_TILE_HEIGHT):
+            yOffset = y * PRAM.TILESIZE - self.cameraOffset[1]
+            for x in range(PRAM.DISPLAY_TILE_WIDTH):
+                tile = tiles[y + self.cameraTile[1]][x + self.cameraTile[0]]
+                if tile[0] != -1:
+                    if tile[1] >= animatedDivide_px:
+                        ypixel = (y + self.cameraTile[1])*PRAM.TILESIZE
+                        xpixel = (x + self.cameraTile[0])*PRAM.TILESIZE
+                        xOffset = x * PRAM.TILESIZE - self.cameraOffset[0]
+                        #TODO origina and destination are baes on absolute pixel position of level, not screen offsets
+                        self.addRenderBox((PRAM.TILESIZE, PRAM.TILESIZE),(xpixel, ypixel) ,(xpixel, ypixel) , PRAM.UP)
+
+
+    def addAnimatedUpperTilesRenderBoxes(self):
+        pass
 
 
     def loadTileMapImages(self):

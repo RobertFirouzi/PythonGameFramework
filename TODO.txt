@@ -1,6 +1,11 @@
 PROJECT CharmQuark 
 *On a branch called encapsulate..
 
+figure out renderbox method 
+	currently only assuming its a moving sprite
+	need to break the moving sprite calculation apart from tile calculation
+	redundantly creating a box from a tile and then a tile from a box!
+
 next: update the changed algorithm to work with moving panorama, animated panorama, and animated tiles
 need to change adding rendered queue box algorithm to add the specific tiles, rather than the box.
 Then can iterate through the tiles in renderChanged function
