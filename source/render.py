@@ -87,7 +87,7 @@ class Renderer:
         self.cameraOffset = self.camera.offset
         self.cameraPosition = self.camera.position
 
-        if  self.camera.moveFlag or self.animatedPanorama:
+        if  self.camera.moveFlag:# or self.animatedPanorama:
             self.isRenderAll = True
 
         if self.lowerTileMap is not None: #quick hack to make sure a level is loaded
@@ -121,26 +121,27 @@ class Renderer:
             if int(self.framecount % self.lowerTileMap.framesPerImage) == 0:  # time to change the pic
                 self.lowerTileMap.updateFrameIndex()
                 if not self.isRenderAll: #if everything is being rendered, don't need to add to changed q
-                    self.addAnimatedLowerTilesRenderBoxes()
+                    self.addRenderBoxes_AnimatedLowerTiles()
                     #TODO - update the render queue with any tiles onscreen which are animated
 
         if self.upperTileMap.isAnimated:
             if int(self.framecount % self.upperTileMap.framesPerImage) == 0:  # time to change the pic
                 self.upperTileMap.updateFrameIndex()
                 if not self.isRenderAll:
-                    self.addAnimatedUpperTilesRenderBoxes()
+                    self.addRenderBoxes_AnimatedUpperTiles()
                     # TODO - update the render queue with any tiles onscreen which are animated
 
         for bg in self.backgrounds:
             if bg.isAnimated:
                 if int(self.framecount%bg.framesPerImage)==0: #time to change the pic
                     bg.updateFrameIndex()
+                    self.addRenderBox_changedPanorama(bg)
 
         for fg in self.foregrounds:
             if fg.isAnimated:
                 if int(self.framecount%fg.framesPerImage)==0: #time to change the pic
                     fg.updateFrameIndex()
-
+                    self.addRenderBox_changedPanorama(fg)
     #depending on the level, certain render methods will be loaded
     #if a level has animated panoramas, or tiles, use those methods.  Else the simpler methods.
     #add the render call for weather effects, etc if necessary
@@ -517,8 +518,9 @@ class Renderer:
 
         renderBox = (minx, maxx, miny, maxy)
         self.renderQueue.append(renderBox) #for panorama rendering
+        self.addChangedTilesFromRenderBox(renderBox) #for tile re-rendering
 
-        #Add the affected tiles to the render queues
+    def addChangedTilesFromRenderBox(self, renderBox):
         xRange = (renderBox[0]//PRAM.TILESIZE, renderBox[1]//PRAM.TILESIZE)
         yRange = (renderBox[2]//PRAM.TILESIZE, renderBox[3]//PRAM.TILESIZE)
         for x in range(xRange[0], xRange[1]):
@@ -530,7 +532,23 @@ class Renderer:
                 if self.renderedUpperTiles.get((y,x)) != True and upperTile[0] != -1:
                     self.renderedUpperTiles[(y,x)] = False
 
-    def addAnimatedLowerTilesRenderBoxes(self):
+
+    def addRenderBox_changedPanorama(self, panorama):
+        screenOffset = (self.cameraTile[0]*PRAM.TILESIZE + self.cameraOffset[0],
+                        self.cameraTile[1]*PRAM.TILESIZE + self.cameraOffset[1])
+
+        for vs in panorama.visibleSections:  # vs = (left edge, right edge, top edge, bottom edge)
+            # check if visible portion of background is on screen
+            if (vs[0] < screenOffset[0] + PRAM.DISPLAY_WIDTH
+                and vs[1] > screenOffset[0]
+                and vs[2] < screenOffset[1] + PRAM.DISPLAY_HEIGHT
+                and vs[3] > screenOffset[1]):
+
+                # self.renderQueue.append((minx, maxx, miny, maxy))  # for panorama rendering
+                self.renderQueue.append(vs)  # for panorama rendering
+                self.addChangedTilesFromRenderBox(vs)
+
+    def addRenderBoxes_AnimatedLowerTiles(self):
         lowerTiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
         upperTiles = self.upperTileMap.tiles
         animatedDivide_px = self.lowerTileMap.animatedDivide_px
@@ -554,7 +572,7 @@ class Renderer:
                             self.renderedUpperTiles[(tileOffset_y, tileOffset_x)] = False #If we re-render lower, must also do upper
 
 
-    def addAnimatedUpperTilesRenderBoxes(self):
+    def addRenderBoxes_AnimatedUpperTiles(self):
         lowerTiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
         upperTiles = self.upperTileMap.tiles
         animatedDivide_px = self.upperTileMap.animatedDivide_px
