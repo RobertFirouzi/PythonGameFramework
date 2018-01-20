@@ -122,8 +122,10 @@ class Tilemap:
         self.animatedOffsets = {} #series of offsets for each animated tile group
 
         # any tile with a y value greater is part of an animated group
-        self.animatedDivide_px = ( (self.animatedIndex-1) // PRAM.TILEMAP_MAX_WIDTH) * PRAM.TILESIZE
-
+        if self.isAnimated:
+            self.animatedDivide_px = ( (self.animatedIndex-1) // PRAM.TILEMAP_MAX_WIDTH) * PRAM.TILESIZE
+        else:
+            self.animatedDivide_px = (height_tiles*width_tiles)*PRAM.TILESIZE #y value never will be greater
         #reformats the tile indexes to pixel coordinates, calculates animated offsets, comresses to tuple
         self.tilemapIndexToCoord()
         self.makeTileListTuple()

@@ -32,6 +32,7 @@ class Renderer:
         self.upperTileMap = None # Object holds tile mapping and image data
         self.animatedPanorama = False
 
+        self.isRenderAll = True #if true, will render the entire screen
         self.renderQueue = []
         self.framecount = 0 #a running count of frame ticks to animate images
 
@@ -86,8 +87,13 @@ class Renderer:
         self.cameraOffset = self.camera.offset
         self.cameraPosition = self.camera.position
 
+        if  self.camera.moveFlag or self.animatedPanorama:
+            self.isRenderAll = True
+
         if self.lowerTileMap is not None: #quick hack to make sure a level is loaded
-            if self.camera.moveFlag or self.animatedPanorama: #know rend
+            self.updateAnimatedIndex() #update any frame indexes for animated tiles
+
+            if self.isRenderAll: #know rend
                 self.renderAllPanorama(BG = True)
                 self.renderAllLowerTile()
                 self.renderAllActors()
@@ -105,8 +111,35 @@ class Renderer:
             self.renderedLowerTiles.clear()
             self.renderedUpperTiles.clear()
             self.camera.moveFlag = False
+            self.isRenderAll = False
 
         self.framecount+=1
+
+    #updates the index of any animated images
+    def updateAnimatedIndex(self):
+        if self.lowerTileMap.isAnimated:
+            if int(self.framecount % self.lowerTileMap.framesPerImage) == 0:  # time to change the pic
+                self.lowerTileMap.updateFrameIndex()
+                if not self.isRenderAll: #if everything is being rendered, don't need to add to changed q
+                    pass
+                    #TODO - update the render queue with any tiles onscreen which are animated
+
+        if self.upperTileMap.isAnimated:
+            if int(self.framecount % self.upperTileMap.framesPerImage) == 0:  # time to change the pic
+                self.upperTileMap.updateFrameIndex()
+                if not self.isRenderAll:
+                    pass
+                    # TODO - update the render queue with any tiles onscreen which are animated
+
+        for bg in self.backgrounds:
+            if bg.isAnimated:
+                if int(self.framecount%bg.framesPerImage)==0: #time to change the pic
+                    bg.updateFrameIndex()
+
+        for fg in self.foregrounds:
+            if fg.isAnimated:
+                if int(self.framecount%fg.framesPerImage)==0: #time to change the pic
+                    fg.updateFrameIndex()
 
     #depending on the level, certain render methods will be loaded
     #if a level has animated panoramas, or tiles, use those methods.  Else the simpler methods.
@@ -136,12 +169,11 @@ class Renderer:
         image = self.lowerTileMap.image
         animatedDivide_px = self.lowerTileMap.animatedDivide_px
         animatedOffsets = self.lowerTileMap.animatedOffsets
-        frameIndex = 0
 
         if self.lowerTileMap.isAnimated:
-            if int(self.framecount % self.lowerTileMap.framesPerImage) == 0:  # time to change the pic
-                self.lowerTileMap.updateFrameIndex()
             frameIndex = self.lowerTileMap.frameIndex
+        else:
+            frameIndex = 0
 
         for y in range(PRAM.DISPLAY_TILE_HEIGHT):
             yOffset = y * PRAM.TILESIZE - self.cameraOffset[1]
@@ -163,13 +195,11 @@ class Renderer:
         image = self.upperTileMap.image
         animatedDivide_px = self.upperTileMap.animatedDivide_px
         animatedOffsets = self.upperTileMap.animatedOffsets
-        frameIndex = 0
 
         if self.upperTileMap.isAnimated:
-            if int(self.framecount % self.upperTileMap.framesPerImage) == 0:  # time to change the pic
-                self.upperTileMap.updateFrameIndex()
             frameIndex = self.upperTileMap.frameIndex
-
+        else:
+            frameIndex = 0
 
         for y in range(PRAM.DISPLAY_TILE_HEIGHT):
             yOffset = y * PRAM.TILESIZE - self.cameraOffset[1]
@@ -186,7 +216,7 @@ class Renderer:
                                      PRAM.TILESIZE, #tileMap width
                                      PRAM.TILESIZE)) #tileMap height
 
-    def renderChangedLowerTile(self):
+    def renderChangedLowerTile_deprecated(self):
         tiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
         image = self.lowerTileMap.image
         for box in self.renderQueue:
@@ -204,8 +234,7 @@ class Renderer:
                                          PRAM.TILESIZE, 
                                          PRAM.TILESIZE)) #blit one tile
                         self.renderedLowerTiles[(y,x)] = True
-
-    def renderChangedUpperTile(self):
+    def renderChangedUpperTile_deprecated(self):
         tiles = self.upperTileMap.tiles #for efficiency, quick reference to ptr
         image = self.upperTileMap.image
         for box in self.renderQueue:
@@ -223,6 +252,44 @@ class Renderer:
                                           PRAM.TILESIZE,
                                           PRAM.TILESIZE))
                         self.renderedUpperTiles[(y,x)] = True
+
+    def renderChangedLowerTile(self):
+        tiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
+        image = self.lowerTileMap.image
+
+        if self.lowerTileMap.isAnimated:
+            frameIndex = self.upperTileMap.frameIndex
+        else:
+            frameIndex = 0
+
+        for changedTile, isRendered in self.renderedLowerTiles.items():
+            if not isRendered:
+                tile = tiles[changedTile[0]][changedTile[1]] #the tilemap image location
+                self.screen.blit(image,
+                                 ((changedTile[1]  - self.cameraTile[0]) * PRAM.TILESIZE  - self.cameraOffset[0], #x screen position
+                                  (changedTile[0] - self.cameraTile[1]) * PRAM.TILESIZE  - self.cameraOffset[1]), #y screen position
+                                 (tile[0], #tilemap image coordinates
+                                  tile[1],
+                                 PRAM.TILESIZE,
+                                 PRAM.TILESIZE)) #blit one tile
+
+                self.renderedLowerTiles[(changedTile[0],changedTile[1])] = True
+
+    def renderChangedUpperTile(self):
+        tiles = self.upperTileMap.tiles #for efficiency, quick reference to ptr
+        image = self.upperTileMap.image
+        for changedTile, isRendered in self.renderedUpperTiles.items():
+            if not isRendered:
+                tile = tiles[changedTile[0]][changedTile[1]] #the tilemap image location
+                self.screen.blit(image,
+                                 ((changedTile[1]  - self.cameraTile[0]) * PRAM.TILESIZE  - self.cameraOffset[0], #x screen position
+                                  (changedTile[0] - self.cameraTile[1]) * PRAM.TILESIZE  - self.cameraOffset[1]), #y screen position
+                                 (tile[0], #tilemap image coordinates
+                                  tile[1],
+                                 PRAM.TILESIZE,
+                                 PRAM.TILESIZE)) #blit one tile
+
+                self.renderedUpperTiles[(changedTile[0],changedTile[1])] = True
 
     def renderAllPanorama(self, BG = True): #if BG render backgrounds, else foregrounds
         screenOffset = (self.cameraTile[0]*PRAM.TILESIZE + self.cameraOffset[0], 
@@ -247,8 +314,6 @@ class Renderer:
                            ((screenOffset[1]*fg.scrolling[1][0]//fg.scrolling[1][1])+motion_y_offset_px)%fg.pxSize[0])
 
             if fg.isAnimated:
-                if int(self.framecount%fg.framesPerImage)==0: #time to change the pic
-                    fg.updateFrameIndex()
                 displayImage = fg.image[fg.imageIndex]
             else:
                 displayImage = fg.image[0]
@@ -378,7 +443,7 @@ class Renderer:
                                 imageSizeY = fg.pxSize[0] - currentCropY
                                 shiftY = True
                                                     
-                            self.screen.blit(fg.image, 
+                            self.screen.blit(fg.image[0],
                                              currentScreenPos,
                                             (currentCropX,  #image x
                                             currentCropY, #image y                                 
@@ -471,7 +536,20 @@ class Renderer:
         if maxy > mapSizeY:
             maxy = mapSizeY
 
-        self.renderQueue.append((minx, maxx, miny, maxy))
+        renderBox = (minx, maxx, miny, maxy)
+        self.renderQueue.append(renderBox) #for panorama rendering
+
+        xRange = (renderBox[0]//PRAM.TILESIZE, renderBox[1]//PRAM.TILESIZE)
+        yRange = (renderBox[2]//PRAM.TILESIZE, renderBox[3]//PRAM.TILESIZE)
+        for x in range(xRange[0], xRange[1]):
+            for y in range(yRange[0], yRange[1]):
+                lowerTile = self.lowerTileMap.tiles[y][x]
+                upperTile = self.upperTileMap.tiles[y][x]
+                if self.renderedLowerTiles.get((y,x)) != True and lowerTile[0] != -1: #-1 is blank
+                    self.renderedLowerTiles[(y,x)] = False
+                if self.renderedUpperTiles.get((y,x)) != True and upperTile[0] != -1:
+                    self.renderedUpperTiles[(y,x)] = False
+
 
     def loadTileMapImages(self):
         if self.lowerTileMap.alpha:

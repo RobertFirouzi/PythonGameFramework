@@ -2,6 +2,10 @@ PROJECT CharmQuark
 *On a branch called encapsulate..
 
 next: update the changed algorithm to work with moving panorama, animated panorama, and animated tiles
+need to change adding rendered queue box algorithm to add the specific tiles, rather than the box.
+Then can iterate through the tiles in renderChanged function
+	this allows to add specific changed tiles due to animation (or other changes)
+	can add to self.renderedLowerTiles dict as false
 
 profiling:
 	render all panorama: 3ms per call (called twice per render.. 1ms per panorama?)
