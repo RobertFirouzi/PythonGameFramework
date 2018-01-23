@@ -1,8 +1,10 @@
 PROJECT CharmQuark 
 *On a branch renderAnimatedChanges
-changed BG: line 419 in render is infinite loop, never completing the renderBox/vs
-next: update the changed algorithm to work with, animated panorama, moving panorama
+next: update the changed algorithm to work with, moving panorama
 update changed actors algorithm to re-render them if on a changed tile
+
+changed panorama: could be some redundant arithmatic for checking boundries of VS and Box
+	when adding a full vs from animated update, maybe more prudent to trim the boundaries to screen here
 
 profiling:
 	render all panorama: 3ms per call (called twice per render.. 1ms per panorama?)

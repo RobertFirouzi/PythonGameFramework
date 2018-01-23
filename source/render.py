@@ -371,11 +371,19 @@ class Renderer:
             images = self.backgrounds
         else:
             images = self.foregrounds
-        
+
+        screenOffset_Xpx = (self.cameraTile[0]*PRAM.TILESIZE)  + self.cameraOffset[0] #pixel 0 of screen is this map pixel
+        screenOffset_Ypx = (self.cameraTile[1]*PRAM.TILESIZE)  + self.cameraOffset[1]
+
         for fg in images:
 
+            if fg.isAnimated:
+                displayImage = fg.image[fg.imageIndex]
+            else:
+                displayImage = fg.image[0]
+
             for box in self.renderQueue:
-                for vs in fg.visibleSections:
+                for vs in fg.visibleSections:  #vs = (left edge, right edge, top edge, bottom edge)
                     
                     #Check to see if this renderBox is within a visible section of the foreground
                     if vs[0] <= box[1] and vs[1]>= box[0] and vs[2] <= box[3] and vs[3] >= box[2]:
@@ -387,11 +395,27 @@ class Renderer:
                         if vs[2] > box[2]:
                             visibleBox[2] = vs[2]
                         if vs[3] < box[3]:
-                            visibleBox[3] = vs[3]        
-                                                                                                    
-                        startScreenPos = (visibleBox[0] - (self.cameraTile[0]*PRAM.TILESIZE)  - self.cameraOffset[0], 
-                                          visibleBox[2] - (self.cameraTile[1]*PRAM.TILESIZE)  - self.cameraOffset[1])
-                        
+                            visibleBox[3] = vs[3]
+
+
+                        if visibleBox[0] < screenOffset_Xpx:
+                            visibleBox[0] = screenOffset_Xpx
+                        if visibleBox[1] > PRAM.DISPLAY_WIDTH+screenOffset_Xpx:
+                            visibleBox[1] = PRAM.DISPLAY_WIDTH+screenOffset_Xpx
+                        if visibleBox[2] < screenOffset_Ypx:
+                            visibleBox[2] = screenOffset_Ypx
+                        if visibleBox[3] > screenOffset_Ypx + PRAM.DISPLAY_HEIGHT:
+
+                            visibleBox[3] = screenOffset_Ypx + PRAM.DISPLAY_HEIGHT
+
+                        startScreenPos = [visibleBox[0] - screenOffset_Xpx,
+                                          visibleBox[2] - screenOffset_Ypx]
+
+                        if startScreenPos[0]<0:
+                            startScreenPos[0]=0
+                        if startScreenPos[1]<0:
+                            startScreenPos[1] = 0
+
                         startCropX = ((self.cameraTile[0]*PRAM.TILESIZE + self.cameraOffset[0])
                                       * fg.scrolling[0][0]
                                       // fg.scrolling[0][1] 
@@ -407,12 +431,23 @@ class Renderer:
                         currentScreenPos = startScreenPos
                         currentCropX =  startCropX
                         currentCropY = startCropY
+
                         imageSizeX = visibleBox[1] - visibleBox[0] 
                         imageSizeY = visibleBox[3] - visibleBox[2]
-                        
+
+
+                        #TODO added to prevenet rendering beyon screen but still stuck in loop
+                        if startScreenPos[0] + imageSizeX > PRAM.DISPLAY_WIDTH: #If render box goes beyond screen border
+                            imageSizeX = PRAM.DISPLAY_WIDTH - startScreenPos[0]
+
+                        if startScreenPos[1] + imageSizeY > PRAM.DISPLAY_HEIGHT: #If render box goes beyond screen border
+                            imageSizeY = PRAM.DISPLAY_HEIGHT - startScreenPos[1]
+
                         keepGoing = True
                         shiftX = False
                         shiftY = False
+
+                        #TODO Infinite loop
                         
                         #check to see if you are at the boundries of the image, and need to tile it
                         while keepGoing:
@@ -423,7 +458,7 @@ class Renderer:
                                 imageSizeY = fg.pxSize[0] - currentCropY
                                 shiftY = True
                                                     
-                            self.screen.blit(fg.image[0],
+                            self.screen.blit(displayImage,
                                              currentScreenPos,
                                             (currentCropX,  #image x
                                             currentCropY, #image y                                 
