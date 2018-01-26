@@ -1,6 +1,8 @@
 PROJECT CharmQuark 
+Can re-write render using pyopengl?
+
 *On a branch renderAnimatedChanges
-next: update the changed algorithm to work with, moving panorama
+next: bug with render changed motion Y (but works for motionX?!)
 update changed actors algorithm to re-render them if on a changed tile
 
 changed panorama: could be some redundant arithmatic for checking boundries of VS and Box

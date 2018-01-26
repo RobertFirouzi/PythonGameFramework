@@ -2,9 +2,6 @@ from actors import SimpleBox
 import pygame
 import parameters as PRAM
 
-import os #Temporary fix to load animated bakground images - remove after DB updated
-from time import time
-
 #renderMethods list populated by game depending on the needs of the currently loaded level/menu
 class Renderer:
     def __init__(self, screen):
@@ -122,26 +119,52 @@ class Renderer:
                 self.lowerTileMap.updateFrameIndex()
                 if not self.isRenderAll: #if everything is being rendered, don't need to add to changed q
                     self.addRenderBoxes_AnimatedLowerTiles()
-                    #TODO - update the render queue with any tiles onscreen which are animated
 
         if self.upperTileMap.isAnimated:
             if int(self.framecount % self.upperTileMap.framesPerImage) == 0:  # time to change the pic
                 self.upperTileMap.updateFrameIndex()
                 if not self.isRenderAll:
                     self.addRenderBoxes_AnimatedUpperTiles()
-                    # TODO - update the render queue with any tiles onscreen which are animated
 
         for bg in self.backgrounds:
+            addRenderBox = False
             if bg.isAnimated:
                 if int(self.framecount%bg.framesPerImage)==0: #time to change the pic
                     bg.updateFrameIndex()
-                    self.addRenderBox_changedPanorama(bg)
+                    addRenderBox = True
+            if bg.isMotion_X:
+                motionOffset = int(bg.motion_x_multiplier * self.framecount)
+                if motionOffset != bg.motionOffset_X: #panorama needs to move
+                    bg.motionOffset_X = motionOffset
+                    addRenderBox = True #if panorama needs to scroll, re-render visibile sections
+            if bg.isMotion_Y:
+                motionOffset = int(bg.motion_y_multiplier * self.framecount)
+                if motionOffset != bg.motionOffset_Y:
+                    bg.motionOffset_Y = motionOffset
+                    addRenderBox = True
+            if addRenderBox and not self.isRenderAll:
+                self.addRenderBox_changedPanorama(bg)
 
         for fg in self.foregrounds:
+            addRenderBox = False
             if fg.isAnimated:
                 if int(self.framecount%fg.framesPerImage)==0: #time to change the pic
                     fg.updateFrameIndex()
-                    self.addRenderBox_changedPanorama(fg)
+                    addRenderBox = True
+            if fg.isMotion_X:
+                motionOffset = int(fg.motion_x_multiplier * self.framecount)
+                if motionOffset != fg.motionOffset_X: #panorama needs to move
+                    fg.motionOffset_X = motionOffset
+                    addRenderBox = True #if panorama needs to scroll, re-render visibile sections
+            if fg.isMotion_Y:
+                motionOffset = int(fg.motion_y_multiplier * self.framecount)
+                if motionOffset != fg.motionOffset_Y:
+                    fg.motionOffset_Y = motionOffset
+                    addRenderBox = True
+            if addRenderBox and not self.isRenderAll:
+                self.addRenderBox_changedPanorama(fg)
+
+
     #depending on the level, certain render methods will be loaded
     #if a level has animated panoramas, or tiles, use those methods.  Else the simpler methods.
     #add the render call for weather effects, etc if necessary
@@ -164,7 +187,6 @@ class Renderer:
 
         self.framecount += 1
 
-    #TODO - assuming is animated, create seperate methods for animated and non animated tiles load correct on on level load
     def renderAllLowerTile(self):
         tiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
         image = self.lowerTileMap.image
@@ -280,18 +302,8 @@ class Renderer:
             images = self.foregrounds
 
         for fg in images:
-            if fg.isMotion_X:
-                motion_x_offset_px = int(fg.motion_x_multiplier * self.framecount)
-            else:
-                motion_x_offset_px = 0
-
-            if fg.isMotion_Y:
-                motion_y_offset_px = int(fg.motion_y_multiplier * self.framecount)
-            else:
-                motion_y_offset_px = 0
-
-            imageOffset = (((screenOffset[0]*fg.scrolling[0][0]//fg.scrolling[0][1])+motion_x_offset_px)%fg.pxSize[1],
-                           ((screenOffset[1]*fg.scrolling[1][0]//fg.scrolling[1][1])+motion_y_offset_px)%fg.pxSize[0])
+            imageOffset = (((screenOffset[0]*fg.scrolling[0][0]//fg.scrolling[0][1])+fg.motionOffset_X)%fg.pxSize[1],
+                           ((screenOffset[1]*fg.scrolling[1][0]//fg.scrolling[1][1])+fg.motionOffset_Y)%fg.pxSize[0])
 
             if fg.isAnimated:
                 displayImage = fg.image[fg.imageIndex]
@@ -365,7 +377,7 @@ class Renderer:
                             keepGoing = False #you have blitted the entire visible section
 
 
-#Currently does not work with animated/motion backgrounds
+#Currently does not work with motion Y backgrounds (but works with X)
     def renderChangedPanorama(self, BG = True):
         if BG:
             images = self.backgrounds
@@ -405,7 +417,6 @@ class Renderer:
                         if visibleBox[2] < screenOffset_Ypx:
                             visibleBox[2] = screenOffset_Ypx
                         if visibleBox[3] > screenOffset_Ypx + PRAM.DISPLAY_HEIGHT:
-
                             visibleBox[3] = screenOffset_Ypx + PRAM.DISPLAY_HEIGHT
 
                         startScreenPos = [visibleBox[0] - screenOffset_Xpx,
@@ -419,13 +430,15 @@ class Renderer:
                         startCropX = ((self.cameraTile[0]*PRAM.TILESIZE + self.cameraOffset[0])
                                       * fg.scrolling[0][0]
                                       // fg.scrolling[0][1] 
-                                      + startScreenPos[0])
+                                      + startScreenPos[0]
+                                      + fg.motionOffset_X)
                         startCropX = startCropX % fg.pxSize[1]
                           
                         startCropY = ((self.cameraTile[1]*PRAM.TILESIZE + self.cameraOffset[1])
                                       * fg.scrolling[1][0]
                                       // fg.scrolling[1][1] 
-                                      + startScreenPos[1])
+                                      + startScreenPos[1]
+                                      + fg.motionOffset_Y)
                         startCropY = startCropY % fg.pxSize[0]
                                         
                         currentScreenPos = startScreenPos
@@ -436,7 +449,6 @@ class Renderer:
                         imageSizeY = visibleBox[3] - visibleBox[2]
 
 
-                        #TODO added to prevenet rendering beyon screen but still stuck in loop
                         if startScreenPos[0] + imageSizeX > PRAM.DISPLAY_WIDTH: #If render box goes beyond screen border
                             imageSizeX = PRAM.DISPLAY_WIDTH - startScreenPos[0]
 
@@ -446,8 +458,6 @@ class Renderer:
                         keepGoing = True
                         shiftX = False
                         shiftY = False
-
-                        #TODO Infinite loop
                         
                         #check to see if you are at the boundries of the image, and need to tile it
                         while keepGoing:
