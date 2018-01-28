@@ -294,7 +294,7 @@ class Renderer:
                 self.renderedUpperTiles[(changedTile[0],changedTile[1])] = True
 
     def renderAllPanorama(self, BG = True): #if BG render backgrounds, else foregrounds
-        screenOffset = (self.cameraTile[0]*PRAM.TILESIZE + self.cameraOffset[0], 
+        screenOffset = (self.cameraTile[0]*PRAM.TILESIZE + self.cameraOffset[0],
                         self.cameraTile[1]*PRAM.TILESIZE + self.cameraOffset[1])
         if BG:
             images = self.backgrounds
@@ -433,14 +433,20 @@ class Renderer:
                                       + startScreenPos[0]
                                       + fg.motionOffset_X)
                         startCropX = startCropX % fg.pxSize[1]
-                          
+
+
+
                         startCropY = ((self.cameraTile[1]*PRAM.TILESIZE + self.cameraOffset[1])
                                       * fg.scrolling[1][0]
                                       // fg.scrolling[1][1] 
                                       + startScreenPos[1]
                                       + fg.motionOffset_Y)
                         startCropY = startCropY % fg.pxSize[0]
-                                        
+
+                        # if fg.layer == 0:
+                            # pygame.draw.line(self.screen, PRAM.COLOR_BLACK, (startCropX, 0), (startCropX, 1600), 5)
+                            # pygame.draw.line(self.screen, PRAM.COLOR_WHITE, (0, startCropY), (1600, startCropY), 5)
+
                         currentScreenPos = startScreenPos
                         currentCropX =  startCropX
                         currentCropY = startCropY
@@ -458,9 +464,11 @@ class Renderer:
                         keepGoing = True
                         shiftX = False
                         shiftY = False
-                        
-                        #check to see if you are at the boundries of the image, and need to tile it
-                        while keepGoing:
+
+                        # blitcount = 0 #Debug code to see which sections are being blitted
+                        # colors = [PRAM.COLOR_GREEN, PRAM.COLOR_BLACK, PRAM.COLOR_BLUE]
+
+                        while keepGoing:  #check to see if you are at the boundries of the image, and need to tile it
                             if currentCropX + imageSizeX > fg.pxSize[1]:
                                 imageSizeX = fg.pxSize[1] - currentCropX
                                 shiftX = True
@@ -474,7 +482,16 @@ class Renderer:
                                             currentCropY, #image y                                 
                                               imageSizeX, #image x width crop
                                               imageSizeY)) #image y height crop   
-                            
+
+                            #debug code to draw the blitting sections
+                            # if fg.layer == 0 and BG:
+                            #     pygame.draw.rect(self.screen,
+                            #                      colors[blitcount%3],
+                            #                     (currentScreenPos[0],currentScreenPos[1],imageSizeX,imageSizeY),
+                            #                      10) #width
+                            #     blitcount += 1
+
+
                             #blit across the X direction first, then shift down the Y and reset the X  
                             if shiftX:
                                 currentScreenPos = [currentScreenPos[0] + imageSizeX, currentScreenPos[1]]
@@ -485,7 +502,7 @@ class Renderer:
                                 currentScreenPos = [startScreenPos[0], currentScreenPos[1] + imageSizeY]
                                 currentCropX = startCropX
                                 imageSizeX = visibleBox[1] - visibleBox[0]
-                                currentCropY = (currentCropY + imageSizeY) % imageSizeY
+                                currentCropY = (currentCropY + imageSizeY) % fg.pxSize[0]
                                 imageSizeY = visibleBox[3] - visibleBox[2] - imageSizeY                                                
                                 shiftY = False    
                             else:

@@ -2,7 +2,8 @@ PROJECT CharmQuark
 Can re-write render using pyopengl?
 
 *On a branch renderAnimatedChanges
-next: bug with render changed motion Y (but works for motionX?!)
+	slows down when putting more than 1 panorama in motion, only on "render changed"
+		is it re-rending same sections many times?
 update changed actors algorithm to re-render them if on a changed tile
 
 changed panorama: could be some redundant arithmatic for checking boundries of VS and Box

@@ -80,9 +80,12 @@ LISTENER_MOVE = 'move'
 
 ### COLORS ###
 COLOR_BLACK = (0, 0, 0)
+COLOR_WHITE = (255, 255, 255)
 COLOR_BLUE = (0, 128, 255)
 COLOR_ORANGE = (255, 100, 0)
-COLOR_WHITE = (255, 255, 255)
+COLOR_GREEN = (100, 255, 0)
+
+
 
 ### IMAGES ###
 IMAGE_LIBRARY = ['ball.png'] #may not be needed
