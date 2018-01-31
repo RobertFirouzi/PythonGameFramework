@@ -2,6 +2,12 @@ from actors import SimpleBox
 import pygame
 import parameters as PRAM
 
+#renderQ and visibleSection indexes
+LEFT_EDGE = 0
+RIGHT_EDGE = 1
+TOP_EDGE = 2
+BOTTOM_EDGE = 3
+
 #renderMethods list populated by game depending on the needs of the currently loaded level/menu
 class Renderer:
     def __init__(self, screen):
@@ -608,7 +614,7 @@ class Renderer:
 
                 # self.renderQueue.append((minx, maxx, miny, maxy))  # for panorama rendering
                 self.renderQueue.append(vs)  # for panorama rendering
-                self.addChangedTilesFromRenderBox(vs)
+                self.addChangedTilesFromRenderBox(vs) #TODO need to trim the box before this call!
 
     def addRenderBoxes_AnimatedLowerTiles(self):
         lowerTiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
@@ -656,6 +662,98 @@ class Renderer:
                         lowerTile = lowerTiles[tileOffset_y][tileOffset_x]
                         if lowerTile[0] != -1:
                             self.renderedLowerTiles[(tileOffset_y, tileOffset_x)] = False #If we re-render upper, must also do lower
+
+    #TODO need to test (and debug) the addToRenderQueue function
+    #Takes a candidate box, and adds it to the render Q, or a portion of it to the renderQ, if part of the box
+    #is already in the render @
+    def addToRenderQueue(self, candidateBox):
+        if len(self.renderQueue) == 0:
+            self.renderQueue.append(candidateBox)
+        else:
+            newBoxes = self.boxedToAdd(candidateBox)
+            self.renderQueue+=newBoxes
+
+    # Takes a candidateBox, and checks if it overlaps with a box already in the Q.
+    # If not, return the box.  If it overlaps, recursively call this funciton
+    # with the box split at the overlap points, returning any boxes that don't overlap a current box
+    # will return an [] if the box is covered completely by the current Q, or a list of boxes which cover new area
+    def boxesToAdd(self, candidateBox):
+        newBoxes= []
+        overlap = False
+        for currentBox in self.renderQueue:
+
+            #Check to see if we already include this section in the Q, if so return no boxes
+            if candidateBox[RIGHT_EDGE] <= currentBox[RIGHT_EDGE] \
+                    and candidateBox[LEFT_EDGE] >= currentBox[LEFT_EDGE] \
+                    and candidateBox[TOP_EDGE] >= currentBox[TOP_EDGE] \
+                    and candidateBox[BOTTOM_EDGE] <= currentBox[BOTTOM_EDGE]:
+                return [] #This box is already covered by one of the boxes in the queue
+
+            #see if the Y overlaps at all
+            if candidateBox[BOTTOM_EDGE] > currentBox[TOP_EDGE] and candidateBox[TOP_EDGE] < currentBox[BOTTOM_EDGE]:
+
+                # Overlaps on left side of current box
+                if candidateBox[RIGHT_EDGE] > currentBox[LEFT_EDGE] and candidateBox[LEFT_EDGE] < currentBox[LEFT_EDGE]:
+                    newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
+                                                  currentBox[LEFT_EDGE],
+                                                  candidateBox[TOP_EDGE],
+                                                  candidateBox[BOTTOM_EDGE]]) #left half
+
+                    newBoxes += self.boxesToAdd([currentBox[LEFT_EDGE],
+                                                  candidateBox[RIGHT_EDGE],
+                                                  candidateBox[TOP_EDGE],
+                                                  candidateBox[BOTTOM_EDGE]]) #right half
+
+                    overlap = True #if there is overlap, we know we don't return the original box
+
+
+                # Overlaps on right side of current box
+                elif candidateBox[LEFT_EDGE] < currentBox[RIGHT_EDGE] and candidateBox[RIGHT_EDGE] > currentBox[RIGHT_EDGE]:
+                    newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
+                                                 currentBox[RIGHT_EDGE],
+                                                 candidateBox[TOP_EDGE],
+                                                 candidateBox[BOTTOM_EDGE]]) #left half
+
+                    newBoxes += self.boxesToAdd([currentBox[RIGHT_EDGE],
+                                                 candidateBox[RIGHT_EDGE],
+                                                 candidateBox[TOP_EDGE],
+                                                 candidateBox[BOTTOM_EDGE]]) #right half
+
+                    overlap = True  # if there is overlap, we know we don't return the original box
+
+                # Overlaps on top side of current box
+                elif candidateBox[TOP_EDGE] < currentBox[TOP_EDGE] and candidateBox[BOTTOM_EDGE] > currentBox[TOP_EDGE]:
+                    newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
+                                                 candidateBox[RIGHT_EDGE],
+                                                 candidateBox[TOP_EDGE],
+                                                 currentBox[TOP_EDGE]]) #top half
+
+                    newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
+                                                 candidateBox[RIGHT_EDGE],
+                                                 currentBox[TOP_EDGE],
+                                                 candidateBox[BOTTOM_EDGE]]) #bottom half
+
+                    overlap = True  # if there is overlap, we know we don't return the original box
+
+
+                # Overlaps on bottom side of current box
+                elif candidateBox[BOTTOM_EDGE] > currentBox[BOTTOM_EDGE] and candidateBox[TOP_EDGE] < currentBox[BOTTOM_EDGE]:
+                    newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
+                                                 candidateBox[RIGHT_EDGE],
+                                                 candidateBox[TOP_EDGE],
+                                                 currentBox[BOTTOM_EDGE]]) #top half
+
+                    newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
+                                                 candidateBox[RIGHT_EDGE],
+                                                 currentBox[BOTTOM_EDGE],
+                                                 candidateBox[BOTTOM_EDGE]]) #bottom half
+
+                    overlap = True  # if there is overlap, we know we don't return the original box
+
+        if overlap: #we split the candidate box up
+            return newBoxes
+        else:
+            return [candidateBox] #there is no overlap with this box and any in the current render Q
 
 
     def loadTileMapImages(self):

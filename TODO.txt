@@ -1,9 +1,35 @@
 PROJECT CharmQuark 
 Can re-write render using pyopengl?
 
+Need to test the recursive function addtoRenderQueue - once working, incorporate this into the renderBox calls
+	Change up order, so all renderboxed are added from moved actors and panoramas, then use the entire
+	render q to add tiles to change
+
+Instead of re-render entire screen on a camera move, can we shift the entire screen and re-render the shifted off part?
+
 *On a branch renderAnimatedChanges
 	slows down when putting more than 1 panorama in motion, only on "render changed"
 		is it re-rending same sections many times?
+			if so, perhaps rethink render box algorithm - for background, maybe just think of one screen
+			surface, and filling in needed sections (so just increase the render box if one already 			exists)
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    114/1    0.004    0.000   36.506   36.506 {built-in method builtins.exec}
+        1    0.027    0.027   36.506   36.506 main.py:5(<module>)
+     1523    0.002    0.000   31.901    0.021 game.py:88(render)
+     1523    0.019    0.000   31.899    0.021 render.py:82(render)
+     2936    0.280    0.000   18.358    0.006 render.py:381(renderChangedPanorama)
+    37907   18.087    0.000   18.087    0.000 {method 'blit' of 'pygame.Surface' objects}
+     1469    0.019    0.000   13.498    0.009 render.py:116(updateAnimatedIndex)
+     2079    0.015    0.000   13.440    0.006 render.py:598(addRenderBox_changedPanorama)
+     4158   10.998    0.003   13.425    0.003 render.py:585(addChangedTilesFromRenderBox) **** bottleneck
+
+
+NOTE THE MAIN ISSUE IS THAT WE ARE ADDING ALL OF THE TILES IN THE vs WHEN ONLY A PORTION IS ON SCREEN!
+	TRIM THE VS BEOFRE THE RENDER QUEUE	
+
+
+
 update changed actors algorithm to re-render them if on a changed tile
 
 changed panorama: could be some redundant arithmatic for checking boundries of VS and Box
