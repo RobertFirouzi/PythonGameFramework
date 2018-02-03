@@ -42,10 +42,6 @@ class Renderer:
         self.renderChangedMethods = [] #This will be the list of render functions to run
         self.renderAllMethods = []
 
-        self.DebugRenderQ = []
-        self.boxOnDeck = None
-        self.AddABox = False
-
 
     def loadAssets(self, levelData):
         self.framecount = 0 #reset framecount
@@ -99,20 +95,7 @@ class Renderer:
             self.isRenderAll = True
 
         if self.lowerTileMap is not None: #quick hack to make sure a level is loaded
-
-            if self.framecount%3==0:
-                if self.AddABox:
-                    self.addToRenderQueue(self.boxOnDeck)
-                    self.AddABox = False
-                    self.boxOnDeck = None
-                else:
-                    self.boxOnDeck = self.randomBox()
-                    self.AddABox = True
-
-            if len(self.DebugRenderQ) > 60:
-                self.DebugRenderQ = []
-
-            # self.updateAnimatedIndex() #update any frame indexes for animated tiles
+            self.updateAnimatedIndex() #update any frame indexes for animated tiles
 
             if self.isRenderAll: #know rend
                 self.renderAllPanorama(BG = True)
@@ -134,33 +117,7 @@ class Renderer:
             self.camera.moveFlag = False
             self.isRenderAll = False
 
-            self.drawDebugBoxes()
-
         self.framecount+=1
-
-    def randomBox(self):
-        import random
-        left = random.randint(0,1500)
-        right = random.randint(left+1, 1800)
-        top = random.randint(0,800)
-        bottom = random.randint(top+1,1000)
-        return(left,right,top,bottom)
-
-    def drawDebugBoxes(self):
-        self.screen.fill(PRAM.COLOR_BLACK)
-        if self.boxOnDeck != None:
-            pygame.draw.line(self.screen, PRAM.COLOR_BLUE,[self.boxOnDeck[0],self.boxOnDeck[2]],[self.boxOnDeck[1],self.boxOnDeck[2]], 4)
-            pygame.draw.line(self.screen, PRAM.COLOR_BLUE,[self.boxOnDeck[0],self.boxOnDeck[2]],[self.boxOnDeck[0],self.boxOnDeck[3]], 4)
-            pygame.draw.line(self.screen, PRAM.COLOR_BLUE,[self.boxOnDeck[1],self.boxOnDeck[2]],[self.boxOnDeck[1],self.boxOnDeck[3]], 4)
-            pygame.draw.line(self.screen, PRAM.COLOR_BLUE,[self.boxOnDeck[0],self.boxOnDeck[3]],[self.boxOnDeck[1],self.boxOnDeck[3]], 4)
-
-        for box in self.DebugRenderQ:
-            pygame.draw.line(self.screen, PRAM.COLOR_WHITE,[box[0],box[2]],[box[1],box[2]], 4)
-            pygame.draw.line(self.screen, PRAM.COLOR_WHITE,[box[0],box[2]],[box[0],box[3]], 4)
-            pygame.draw.line(self.screen, PRAM.COLOR_WHITE,[box[1],box[2]],[box[1],box[3]], 4)
-            pygame.draw.line(self.screen, PRAM.COLOR_WHITE,[box[0],box[3]],[box[1],box[3]], 4)
-
-
 
     #updates the index of any animated images
     def updateAnimatedIndex(self):
@@ -635,6 +592,12 @@ class Renderer:
     def addChangedTilesFromRenderBox(self, renderBox):
         xRange = (renderBox[0]//PRAM.TILESIZE, renderBox[1]//PRAM.TILESIZE)
         yRange = (renderBox[2]//PRAM.TILESIZE, renderBox[3]//PRAM.TILESIZE)
+        #don't check tiles beyond bound of level
+        if xRange[1] > self.levelData.size[0]-1:
+            xRange[1] = self.levelData.size[0]-1
+        if yRange[1] > self.levelData.size[1]-1:
+            yRange[1] = self.levelData.size[1]-1
+
         for x in range(xRange[0], xRange[1]):
             for y in range(yRange[0], yRange[1]):
                 lowerTile = self.lowerTileMap.tiles[y][x]
@@ -656,9 +619,26 @@ class Renderer:
                 and vs[2] < screenOffset[1] + PRAM.DISPLAY_HEIGHT
                 and vs[3] > screenOffset[1]):
 
-                # self.renderQueue.append((minx, maxx, miny, maxy))  # for panorama rendering
-                self.renderQueue.append(vs)  # for panorama rendering
-                self.addChangedTilesFromRenderBox(vs) #TODO need to trim the box before this call!
+                box = list(vs)
+
+                #trim the render box to the size of the screen
+                if box[LEFT_EDGE] < self.screenBoundryLeft(): #TODO make these methods
+                    box[LEFT_EDGE] = self.screenBoundryLeft()
+                if box[RIGHT_EDGE] > self.screenBoundryRight():
+                    box[RIGHT_EDGE] = self.screenBoundryRight()
+                if box[TOP_EDGE] < self.screenBoundryTop():
+                    box[TOP_EDGE] = self.screenBoundryTop()
+                if box[BOTTOM_EDGE] > self.screenBoundryBottom():
+                    box[BOTTOM_EDGE] = self.screenBoundryBottom()
+
+                #adjusts box to be on border of tiles, so that we render the tile and box boundry the same
+                box[LEFT_EDGE] = box[LEFT_EDGE] - (box[LEFT_EDGE]%PRAM.TILESIZE)
+                box[RIGHT_EDGE] = box[RIGHT_EDGE] + (PRAM.TILESIZE - (box[RIGHT_EDGE]%PRAM.TILESIZE))
+                box[TOP_EDGE] = box[TOP_EDGE] - (box[TOP_EDGE]%PRAM.TILESIZE)
+                box[BOTTOM_EDGE] = box[BOTTOM_EDGE] - (box[BOTTOM_EDGE]%PRAM.TILESIZE)
+
+                self.addToRenderQueue(box)
+                self.addChangedTilesFromRenderBox(box)
 
     def addRenderBoxes_AnimatedLowerTiles(self):
         lowerTiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
@@ -677,7 +657,8 @@ class Renderer:
                     if lowerTile[1] >= animatedDivide_px:
                         minx = (x + cameraTile[0])*PRAM.TILESIZE
                         maxx = minx+PRAM.TILESIZE
-                        self.renderQueue.append((minx, maxx, miny, maxy))  # for panorama rendering
+                        # self.renderQueue.append((minx, maxx, miny, maxy))  # for panorama rendering
+                        self.addToRenderQueue((minx, maxx, miny, maxy))
                         self.renderedLowerTiles[(tileOffset_y, tileOffset_x)] = False
                         upperTile = upperTiles[tileOffset_y][tileOffset_x]
                         if upperTile[0] != -1:
@@ -701,21 +682,21 @@ class Renderer:
                     if upperTile[1] >= animatedDivide_px:
                         minx = (x + cameraTile[0])*PRAM.TILESIZE
                         maxx = minx+PRAM.TILESIZE
-                        self.renderQueue.append((minx, maxx, miny, maxy))  # for panorama rendering
+                        # self.renderQueue.append((minx, maxx, miny, maxy))  # for panorama rendering
+                        self.addToRenderQueue((minx, maxx, miny, maxy))
                         self.renderedUpperTiles[(tileOffset_y, tileOffset_x)] = False
                         lowerTile = lowerTiles[tileOffset_y][tileOffset_x]
                         if lowerTile[0] != -1:
                             self.renderedLowerTiles[(tileOffset_y, tileOffset_x)] = False #If we re-render upper, must also do lower
 
-    #TODO need to test (and debug) the addToRenderQueue function
     #Takes a candidate box, and adds it to the render Q, or a portion of it to the renderQ, if part of the box
     #is already in the render @
     def addToRenderQueue(self, candidateBox):
-        if len(self.DebugRenderQ) == 0: #TODO
-            self.DebugRenderQ.append(candidateBox)
+        if len(self.renderQueue) == 0: #TODO
+            self.renderQueue.append(candidateBox)
         else:
             newBoxes = self.boxesToAdd(candidateBox)
-            self.DebugRenderQ+=newBoxes
+            self.renderQueue+=newBoxes
 
     # Takes a candidateBox, and checks if it overlaps with a box already in the Q.
     # If not, return the box.  If it overlaps, recursively call this funciton
@@ -724,7 +705,7 @@ class Renderer:
     def boxesToAdd(self, candidateBox):
         newBoxes= []
         overlap = False
-        for currentBox in self.DebugRenderQ:
+        for currentBox in self.renderQueue:
 
             #Check to see if we already include this section in the Q, if so return no boxes
             if candidateBox[RIGHT_EDGE] <= currentBox[RIGHT_EDGE] \
@@ -733,18 +714,11 @@ class Renderer:
                     and candidateBox[BOTTOM_EDGE] <= currentBox[BOTTOM_EDGE]:
                 return [] #This box is already covered by one of the boxes in the queue
 
-            #TODO - Check if candidate engulfs current?  If so mark current as "Zombie" and remove after algorithm
-            # elif candidateBox[RIGHT_EDGE] >= currentBox[RIGHT_EDGE] \
-            #         and candidateBox[LEFT_EDGE] <= currentBox[LEFT_EDGE] \
-            #         and candidateBox[TOP_EDGE] <= currentBox[TOP_EDGE] \
-            #         and candidateBox[BOTTOM_EDGE] >= currentBox[BOTTOM_EDGE]:
-            #     currentBox = [0,0,0,0] #TODO need to change to a for loop and index into the box
-
             #see if the Y overlaps at all
             if candidateBox[BOTTOM_EDGE] > currentBox[TOP_EDGE] and candidateBox[TOP_EDGE] < currentBox[BOTTOM_EDGE]:
 
                 # Overlaps on left side of current box
-                if candidateBox[RIGHT_EDGE] > currentBox[LEFT_EDGE] and candidateBox[LEFT_EDGE] < currentBox[LEFT_EDGE]:
+                if candidateBox[RIGHT_EDGE] > currentBox[LEFT_EDGE] > candidateBox[LEFT_EDGE]:
                     newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
                                                   currentBox[LEFT_EDGE],
                                                   candidateBox[TOP_EDGE],
@@ -759,9 +733,8 @@ class Renderer:
                     overlap = True #if there is overlap, we know we don't return the original box
                     break
 
-
                 # Overlaps on right side of current box
-                elif candidateBox[LEFT_EDGE] < currentBox[RIGHT_EDGE] and candidateBox[RIGHT_EDGE] > currentBox[RIGHT_EDGE]:
+                elif candidateBox[LEFT_EDGE] < currentBox[RIGHT_EDGE] < candidateBox[RIGHT_EDGE]:
                     newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
                                                  currentBox[RIGHT_EDGE],
                                                  candidateBox[TOP_EDGE],
@@ -778,7 +751,7 @@ class Renderer:
                 # Check if the candidate X is within the middle of the current, overlapping at top or bottom
                 elif candidateBox[LEFT_EDGE] < currentBox[RIGHT_EDGE] and candidateBox[RIGHT_EDGE] > currentBox[LEFT_EDGE]:
                     # Overlaps on top side of current box
-                    if candidateBox[TOP_EDGE] < currentBox[TOP_EDGE] and candidateBox[BOTTOM_EDGE] > currentBox[TOP_EDGE]:
+                    if candidateBox[TOP_EDGE] < currentBox[TOP_EDGE] < candidateBox[BOTTOM_EDGE]:
                         newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
                                                      candidateBox[RIGHT_EDGE],
                                                      candidateBox[TOP_EDGE],
@@ -792,9 +765,8 @@ class Renderer:
                         overlap = True  # if there is overlap, we know we don't return the original box
                         break
 
-
                     # Overlaps on bottom side of current box
-                    elif candidateBox[BOTTOM_EDGE] > currentBox[BOTTOM_EDGE] and candidateBox[TOP_EDGE] < currentBox[BOTTOM_EDGE]:
+                    elif candidateBox[BOTTOM_EDGE] > currentBox[BOTTOM_EDGE] > candidateBox[TOP_EDGE]:
                         newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
                                                      candidateBox[RIGHT_EDGE],
                                                      candidateBox[TOP_EDGE],
@@ -812,7 +784,6 @@ class Renderer:
             return newBoxes
         else:
             return [candidateBox] #there is no overlap with this box and any in the current render Q
-
 
     def loadTileMapImages(self):
         if self.lowerTileMap.alpha:
