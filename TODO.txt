@@ -1,9 +1,15 @@
 PROJECT CharmQuark 
 Can re-write render using pyopengl?
 
-Need to test the recursive function addtoRenderQueue - once working, incorporate this into the renderBox calls
-	Change up order, so all renderboxed are added from moved actors and panoramas, then use the entire
-	render q to add tiles to change
+Bug
+screen covering with background when foreground scrolling (seems to be under the visible foreground section)
+
+minor optimizations: 
+lists to tuples
+
+minor cleanup:
+move related functions next to each other (renderQ functs)
+calculations packaged as functions (eg screenBoundryLeft)
 
 Instead of re-render entire screen on a camera move, can we shift the entire screen and re-render the shifted off part?
 
@@ -73,6 +79,8 @@ buttomap
 
 BUG:
 default action trying to access depcrecated levelLayout Object
+the visible section for foreground is off by one in the database (1101 not 1100)
+
 
 Need to decide if (height, width) or (width, height)
 probably should do (height, width) since that is === to (rows, columns), but be consitent

@@ -111,6 +111,8 @@ class Renderer:
                 self.renderChangedUpperTile()
                 self.renderChangedPanorama(BG = False)
 
+                self.debug_drawRenderQ()
+
             self.renderQueue.clear()
             self.renderedLowerTiles.clear()
             self.renderedUpperTiles.clear()
@@ -118,6 +120,47 @@ class Renderer:
             self.isRenderAll = False
 
         self.framecount+=1
+
+    def debug_drawRenderQ(self):
+        HOWTHICK = 1
+
+        for renderBox in self.renderQueue:
+            renderBox = [renderBox[0] - self.screenBoundryLeft(),
+                         renderBox[1]- self.screenBoundryLeft(),
+                         renderBox[2]- self.screenBoundryTop(),
+                         renderBox[3]- self.screenBoundryTop()]
+
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[LEFT_EDGE], renderBox[TOP_EDGE]),
+                             (renderBox[RIGHT_EDGE], renderBox[TOP_EDGE]),
+                             HOWTHICK)
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[LEFT_EDGE], renderBox[TOP_EDGE]),
+                             (renderBox[LEFT_EDGE], renderBox[BOTTOM_EDGE]),
+                             HOWTHICK)
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[RIGHT_EDGE], renderBox[TOP_EDGE]),
+                             (renderBox[RIGHT_EDGE], renderBox[BOTTOM_EDGE]),
+                             HOWTHICK)
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[LEFT_EDGE], renderBox[BOTTOM_EDGE]),
+                             (renderBox[RIGHT_EDGE], renderBox[BOTTOM_EDGE]),
+                             HOWTHICK)
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[LEFT_EDGE], renderBox[TOP_EDGE]),
+                             (renderBox[RIGHT_EDGE], renderBox[BOTTOM_EDGE]),
+                             HOWTHICK)
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[RIGHT_EDGE], renderBox[TOP_EDGE]),
+                             (renderBox[LEFT_EDGE], renderBox[BOTTOM_EDGE]),
+                             HOWTHICK)
+
 
     #updates the index of any animated images
     def updateAnimatedIndex(self):
@@ -590,8 +633,8 @@ class Renderer:
         self.addChangedTilesFromRenderBox(renderBox) #for tile re-rendering
 
     def addChangedTilesFromRenderBox(self, renderBox):
-        xRange = (renderBox[0]//PRAM.TILESIZE, renderBox[1]//PRAM.TILESIZE)
-        yRange = (renderBox[2]//PRAM.TILESIZE, renderBox[3]//PRAM.TILESIZE)
+        xRange = [renderBox[0]//PRAM.TILESIZE, renderBox[1]//PRAM.TILESIZE]
+        yRange = [renderBox[2]//PRAM.TILESIZE, renderBox[3]//PRAM.TILESIZE]
         #don't check tiles beyond bound of level
         if xRange[1] > self.levelData.size[0]-1:
             xRange[1] = self.levelData.size[0]-1
@@ -622,7 +665,7 @@ class Renderer:
                 box = list(vs)
 
                 #trim the render box to the size of the screen
-                if box[LEFT_EDGE] < self.screenBoundryLeft(): #TODO make these methods
+                if box[LEFT_EDGE] < self.screenBoundryLeft():
                     box[LEFT_EDGE] = self.screenBoundryLeft()
                 if box[RIGHT_EDGE] > self.screenBoundryRight():
                     box[RIGHT_EDGE] = self.screenBoundryRight()
@@ -635,10 +678,11 @@ class Renderer:
                 box[LEFT_EDGE] = box[LEFT_EDGE] - (box[LEFT_EDGE]%PRAM.TILESIZE)
                 box[RIGHT_EDGE] = box[RIGHT_EDGE] + (PRAM.TILESIZE - (box[RIGHT_EDGE]%PRAM.TILESIZE))
                 box[TOP_EDGE] = box[TOP_EDGE] - (box[TOP_EDGE]%PRAM.TILESIZE)
-                box[BOTTOM_EDGE] = box[BOTTOM_EDGE] - (box[BOTTOM_EDGE]%PRAM.TILESIZE)
+                box[BOTTOM_EDGE] = box[BOTTOM_EDGE] + (PRAM.TILESIZE - (box[BOTTOM_EDGE]%PRAM.TILESIZE))
 
-                self.addToRenderQueue(box)
-                self.addChangedTilesFromRenderBox(box)
+                addedBoxes =self.addToRenderQueue(box)
+                for addedBox in addedBoxes: #Add changed tiles only for sections actually added to the queue
+                    self.addChangedTilesFromRenderBox(addedBox)
 
     def addRenderBoxes_AnimatedLowerTiles(self):
         lowerTiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
@@ -694,9 +738,11 @@ class Renderer:
     def addToRenderQueue(self, candidateBox):
         if len(self.renderQueue) == 0: #TODO
             self.renderQueue.append(candidateBox)
+            return [candidateBox] #so we always return a list
         else:
             newBoxes = self.boxesToAdd(candidateBox)
             self.renderQueue+=newBoxes
+            return newBoxes #return what was added for a reference to use on adding tiles or other affected assets
 
     # Takes a candidateBox, and checks if it overlaps with a box already in the Q.
     # If not, return the box.  If it overlaps, recursively call this funciton
@@ -795,6 +841,19 @@ class Renderer:
             self.upperTileMap.image = pygame.image.load(self.upperTileMap.filePath).convert_alpha()
         else:
             self.upperTileMap.image = pygame.image.load(self.upperTileMap.filePath).convert()
+
+
+    def screenBoundryLeft(self):
+        return (self.cameraTile[0]*PRAM.TILESIZE) + self.cameraOffset[0]
+
+    def screenBoundryRight(self):
+        return (self.cameraTile[0] * PRAM.TILESIZE) + self.cameraOffset[0] + PRAM.DISPLAY_WIDTH
+
+    def screenBoundryTop(self):
+        return (self.cameraTile[1]*PRAM.TILESIZE) + self.cameraOffset[1]
+
+    def screenBoundryBottom(self):
+        return (self.cameraTile[1] * PRAM.TILESIZE) + self.cameraOffset[1] + PRAM.DISPLAY_HEIGHT
 
 #use pygame image.load, convert alpha if necessary, return the image file
 def loadPanorama(panorama):
