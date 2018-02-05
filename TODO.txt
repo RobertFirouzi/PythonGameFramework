@@ -3,6 +3,7 @@ Can re-write render using pyopengl?
 
 Bug
 screen covering with background when foreground scrolling (seems to be under the visible foreground section)
+	the way the renderQ/visibilebox logic is clipping the render is causing a negative ImageSizeY
 
 minor optimizations: 
 lists to tuples

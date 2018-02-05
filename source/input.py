@@ -73,7 +73,7 @@ class InputHandler:
             self.inputActionBehavior = self.doNothing
             self.inputCancelBehavior = self.doNothing
             self.inputStatusBehavior = self.doNothing
-            self.leftClickBehavior = printPixelPosition
+            self.leftClickBehavior = self.printPixelPosition
 
         elif inputType == PRAM.INPTYPE_MENU:
             self.inputUpBehavior = self.menuUp
@@ -83,7 +83,7 @@ class InputHandler:
             self.inputActionBehavior = self.menuAction 
             self.inputCancelBehavior = self.menuCancel
             self.inputStatusBehavior = self.doNothing
-            self.leftClickBehavior = printPixelPosition
+            self.leftClickBehavior = self.printPixelPosition
 
         elif inputType == PRAM.INPTYPE_NORMAL:        
             self.inputUpBehavior = self.movementUp
@@ -94,7 +94,7 @@ class InputHandler:
             self.inputCancelBehavior = self.doNothing
             self.inputStatusBehavior = self.statusAction
             self.enterDebugBehavior = self.startDebug
-            self.leftClickBehavior = printPixelPosition
+            self.leftClickBehavior = self.printPixelPosition
 
     def movementUp(self):
         self.game.addEvent(self.player.actionMove(PRAM.UP))
@@ -138,5 +138,10 @@ class InputHandler:
     def startDebug(self):
         self.game.runDebug = True
 
-def printPixelPosition(args):
-    print('('+str(args[0])+','+str(args[1])+')') #prints the coordinates of the mouse click
+    def printPixelPosition(self, args):  #prints the coordinates of the mouse click
+        click_x = args[0]
+        click_y = args[1]
+        abs_x = click_x + self.game.gameCamera.tile[0]*PRAM.TILESIZE + self.game.gameCamera.offset[0]
+        abs_y = click_y + self.game.gameCamera.tile[1]*PRAM.TILESIZE + self.game.gameCamera.offset[1]
+        print('\nRelative: ('+str(click_x)+','+str(click_y)+')')
+        print('Absolute: ('+str(abs_x)+','+str(abs_y )+')')

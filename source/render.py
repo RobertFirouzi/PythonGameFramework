@@ -448,7 +448,7 @@ class Renderer:
                 for vs in fg.visibleSections:  #vs = (left edge, right edge, top edge, bottom edge)
                     
                     #Check to see if this renderBox is within a visible section of the foreground
-                    if vs[0] <= box[1] and vs[1]>= box[0] and vs[2] <= box[3] and vs[3] >= box[2]:
+                    if vs[0] <= box[1] and vs[1]>= box[0] and vs[2] <= box[3] and vs[3] >= box[2]: #TODO this clusterfuck logic is causing negative imageSizeY logic
                         visibleBox = list(box)
                         if vs[0] > box[0]:
                             visibleBox[0] = vs[0]
@@ -504,6 +504,12 @@ class Renderer:
                         imageSizeX = visibleBox[1] - visibleBox[0] 
                         imageSizeY = visibleBox[3] - visibleBox[2]
 
+                        # TODO debug - issue is that sometimes the imageSizeY comes out negative!
+                        if imageSizeY < 0:
+                            print('Y: ' + str(imageSizeY))
+                        if imageSizeX < 0:
+                            print('X:' + str(imageSizeX))
+
 
                         if startScreenPos[0] + imageSizeX > PRAM.DISPLAY_WIDTH: #If render box goes beyond screen border
                             imageSizeX = PRAM.DISPLAY_WIDTH - startScreenPos[0]
@@ -518,6 +524,7 @@ class Renderer:
                         # blitcount = 0 #Debug code to see which sections are being blitted
                         # colors = [PRAM.COLOR_GREEN, PRAM.COLOR_BLACK, PRAM.COLOR_BLUE]
 
+
                         while keepGoing:  #check to see if you are at the boundries of the image, and need to tile it
                             if currentCropX + imageSizeX > fg.pxSize[1]:
                                 imageSizeX = fg.pxSize[1] - currentCropX
@@ -525,7 +532,8 @@ class Renderer:
                             if currentCropY + imageSizeY > fg.pxSize[0]:
                                 imageSizeY = fg.pxSize[0] - currentCropY
                                 shiftY = True
-                                                    
+
+
                             self.screen.blit(displayImage,
                                              currentScreenPos,
                                             (currentCropX,  #image x
