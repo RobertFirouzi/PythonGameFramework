@@ -426,16 +426,14 @@ class Renderer:
                         else:
                             keepGoing = False #you have blitted the entire visible section
 
-
-#Currently does not work with motion Y backgrounds (but works with X)
     def renderChangedPanorama(self, BG = True):
         if BG:
             images = self.backgrounds
         else:
             images = self.foregrounds
 
-        screenOffset_Xpx = (self.cameraTile[0]*PRAM.TILESIZE)  + self.cameraOffset[0] #pixel 0 of screen is this map pixel
-        screenOffset_Ypx = (self.cameraTile[1]*PRAM.TILESIZE)  + self.cameraOffset[1]
+        screenBoundryLeft = self.screenBoundryLeft() #pixel 0 of screen is this map pixel
+        screenBoundryTop = self.screenBoundryTop()
 
         for fg in images:
 
@@ -446,89 +444,42 @@ class Renderer:
 
             for box in self.renderQueue:
                 for vs in fg.visibleSections:  #vs = (left edge, right edge, top edge, bottom edge)
-                    
-                    #Check to see if this renderBox is within a visible section of the foreground
-                    if vs[0] <= box[1] and vs[1]>= box[0] and vs[2] <= box[3] and vs[3] >= box[2]: #TODO this clusterfuck logic is causing negative imageSizeY logic
-                        visibleBox = list(box)
-                        if vs[0] > box[0]:
-                            visibleBox[0] = vs[0]
-                        if vs[1] < box[1]:
-                            visibleBox[1] = vs[1]
-                        if vs[2] > box[2]:
-                            visibleBox[2] = vs[2]
-                        if vs[3] < box[3]:
-                            visibleBox[3] = vs[3]
+                    visibleBox = self.getBoxOverlap(box, vs)
+                    if visibleBox and self.isBoxOnScreen(visibleBox):
+                        visibleBox = self.trimBoxToScreen(visibleBox)  #make sure we have a box within screen boundry
 
+                        startScreenPos = [visibleBox[LEFT_EDGE] - screenBoundryLeft,  #relative coordinate of starting image position
+                                          visibleBox[TOP_EDGE] - screenBoundryTop]
 
-                        if visibleBox[0] < screenOffset_Xpx:
-                            visibleBox[0] = screenOffset_Xpx
-                        if visibleBox[1] > PRAM.DISPLAY_WIDTH+screenOffset_Xpx:
-                            visibleBox[1] = PRAM.DISPLAY_WIDTH+screenOffset_Xpx
-                        if visibleBox[2] < screenOffset_Ypx:
-                            visibleBox[2] = screenOffset_Ypx
-                        if visibleBox[3] > screenOffset_Ypx + PRAM.DISPLAY_HEIGHT:
-                            visibleBox[3] = screenOffset_Ypx + PRAM.DISPLAY_HEIGHT
-
-                        startScreenPos = [visibleBox[0] - screenOffset_Xpx,
-                                          visibleBox[2] - screenOffset_Ypx]
-
-                        if startScreenPos[0]<0:
-                            startScreenPos[0]=0
-                        if startScreenPos[1]<0:
-                            startScreenPos[1] = 0
-
-                        startCropX = ((self.cameraTile[0]*PRAM.TILESIZE + self.cameraOffset[0])
+                        startCropX = (screenBoundryLeft
                                       * fg.scrolling[0][0]
                                       // fg.scrolling[0][1] 
                                       + startScreenPos[0]
                                       + fg.motionOffset_X)
-                        startCropX = startCropX % fg.pxSize[1]
+                        startCropX = startCropX % fg.pxSize[1]  #where to start the crop from the image file
 
-
-
-                        startCropY = ((self.cameraTile[1]*PRAM.TILESIZE + self.cameraOffset[1])
+                        startCropY = (screenBoundryTop
                                       * fg.scrolling[1][0]
                                       // fg.scrolling[1][1] 
                                       + startScreenPos[1]
                                       + fg.motionOffset_Y)
                         startCropY = startCropY % fg.pxSize[0]
 
-                        # if fg.layer == 0:
-                            # pygame.draw.line(self.screen, PRAM.COLOR_BLACK, (startCropX, 0), (startCropX, 1600), 5)
-                            # pygame.draw.line(self.screen, PRAM.COLOR_WHITE, (0, startCropY), (1600, startCropY), 5)
-
                         currentScreenPos = startScreenPos
                         currentCropX =  startCropX
                         currentCropY = startCropY
 
-                        imageSizeX = visibleBox[1] - visibleBox[0] 
-                        imageSizeY = visibleBox[3] - visibleBox[2]
-
-                        # TODO debug - issue is that sometimes the imageSizeY comes out negative!
-                        if imageSizeY < 0:
-                            print('Y: ' + str(imageSizeY))
-                        if imageSizeX < 0:
-                            print('X:' + str(imageSizeX))
-
-
-                        if startScreenPos[0] + imageSizeX > PRAM.DISPLAY_WIDTH: #If render box goes beyond screen border
-                            imageSizeX = PRAM.DISPLAY_WIDTH - startScreenPos[0]
-
-                        if startScreenPos[1] + imageSizeY > PRAM.DISPLAY_HEIGHT: #If render box goes beyond screen border
-                            imageSizeY = PRAM.DISPLAY_HEIGHT - startScreenPos[1]
+                        imageSizeX = visibleBox[RIGHT_EDGE] - visibleBox[LEFT_EDGE] #how much of the image do we need to blit
+                        imageSizeY = visibleBox[BOTTOM_EDGE] - visibleBox[TOP_EDGE]
 
                         keepGoing = True
                         shiftX = False
                         shiftY = False
 
-                        # blitcount = 0 #Debug code to see which sections are being blitted
-                        # colors = [PRAM.COLOR_GREEN, PRAM.COLOR_BLACK, PRAM.COLOR_BLUE]
-
-
                         while keepGoing:  #check to see if you are at the boundries of the image, and need to tile it
                             if currentCropX + imageSizeX > fg.pxSize[1]:
                                 imageSizeX = fg.pxSize[1] - currentCropX
-                                shiftX = True
+                                shiftX = True #means we need to do at least 1 more blit to finish X direction
                             if currentCropY + imageSizeY > fg.pxSize[0]:
                                 imageSizeY = fg.pxSize[0] - currentCropY
                                 shiftY = True
@@ -541,16 +492,7 @@ class Renderer:
                                               imageSizeX, #image x width crop
                                               imageSizeY)) #image y height crop   
 
-                            #debug code to draw the blitting sections
-                            # if fg.layer == 0 and BG:
-                            #     pygame.draw.rect(self.screen,
-                            #                      colors[blitcount%3],
-                            #                     (currentScreenPos[0],currentScreenPos[1],imageSizeX,imageSizeY),
-                            #                      10) #width
-                            #     blitcount += 1
-
-
-                            #blit across the X direction first, then shift down the Y and reset the X  
+                            #blit across the X direction first, then shift down the Y and reset the X
                             if shiftX:
                                 currentScreenPos = [currentScreenPos[0] + imageSizeX, currentScreenPos[1]]
                                 currentCropX = (currentCropX + imageSizeX) % fg.pxSize[1]
@@ -744,7 +686,7 @@ class Renderer:
     #Takes a candidate box, and adds it to the render Q, or a portion of it to the renderQ, if part of the box
     #is already in the render @
     def addToRenderQueue(self, candidateBox):
-        if len(self.renderQueue) == 0: #TODO
+        if len(self.renderQueue) == 0:
             self.renderQueue.append(candidateBox)
             return [candidateBox] #so we always return a list
         else:
@@ -849,6 +791,71 @@ class Renderer:
             self.upperTileMap.image = pygame.image.load(self.upperTileMap.filePath).convert_alpha()
         else:
             self.upperTileMap.image = pygame.image.load(self.upperTileMap.filePath).convert()
+
+
+    #given absolute box coords, trim to the boundries of the visible screen
+    def trimBoxToScreen(self, box):
+        trimmedBox = list(box)
+        if box[LEFT_EDGE] < self.screenBoundryLeft():
+            trimmedBox[LEFT_EDGE] = self.screenBoundryLeft()
+        if box[RIGHT_EDGE] > self.screenBoundryRight():
+            trimmedBox[RIGHT_EDGE] = self.screenBoundryRight()
+        if box[TOP_EDGE] < self.screenBoundryTop():
+            trimmedBox[TOP_EDGE] = self.screenBoundryTop()
+        if box[BOTTOM_EDGE] > self.screenBoundryBottom():
+            trimmedBox[BOTTOM_EDGE] = self.screenBoundryBottom()
+
+        return trimmedBox
+
+
+    #given 2boxes [left,right,top,bottom], return a box where they overlap, or an [] if no overlap
+    def getBoxOverlap(self, box1, box2):
+        # Check to see if any overlap at all
+        if self.isBoxOverlap(box1, box2):
+            overlap = [0, 0, 0, 0]
+
+            if box1[LEFT_EDGE] > box2[LEFT_EDGE]:
+                overlap[LEFT_EDGE] = box1[LEFT_EDGE]
+            else:
+                overlap[LEFT_EDGE] = box2[LEFT_EDGE]
+
+            if box1[RIGHT_EDGE] < box2[RIGHT_EDGE]:
+                overlap[RIGHT_EDGE] = box1[RIGHT_EDGE]
+            else:
+                overlap[RIGHT_EDGE] = box2[RIGHT_EDGE]
+
+            if box1[TOP_EDGE] > box2[TOP_EDGE]:
+                overlap[TOP_EDGE] = box1[TOP_EDGE]
+            else:
+                overlap[TOP_EDGE] = box2[TOP_EDGE]
+
+            if box1[BOTTOM_EDGE] < box2[BOTTOM_EDGE]:
+                overlap[BOTTOM_EDGE] = box1[BOTTOM_EDGE]
+            else:
+                overlap[BOTTOM_EDGE] = box2[BOTTOM_EDGE]
+
+            return overlap
+
+        else:
+            return [] #no overlap
+
+    #given a box of absolute coordinates, check if it is on the display surface
+    def isBoxOnScreen(self,box):
+        if box[LEFT_EDGE] < self.screenBoundryRight() and \
+                        box[RIGHT_EDGE] > self.screenBoundryLeft() and \
+                        box[TOP_EDGE] < self.screenBoundryBottom() and \
+                        box[BOTTOM_EDGE] > self.screenBoundryTop():
+            return True
+        return False
+
+    #return true if there is any overlap between two boxes
+    def isBoxOverlap(self, box1, box2):
+        if box1[LEFT_EDGE] < box2[RIGHT_EDGE] and \
+                        box1[RIGHT_EDGE] > box2[LEFT_EDGE] and \
+                        box1[TOP_EDGE] < box2[BOTTOM_EDGE] and \
+                        box1[BOTTOM_EDGE] > box2[TOP_EDGE]:
+            return True
+        return False
 
 
     def screenBoundryLeft(self):

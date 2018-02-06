@@ -1,9 +1,7 @@
 PROJECT CharmQuark 
 Can re-write render using pyopengl?
 
-Bug
-screen covering with background when foreground scrolling (seems to be under the visible foreground section)
-	the way the renderQ/visibilebox logic is clipping the render is causing a negative ImageSizeY
+Bug: should fix the fg visible section off by 1 issue - is making it apper to have glitches
 
 minor optimizations: 
 lists to tuples
