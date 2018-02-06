@@ -1,44 +1,22 @@
 PROJECT CharmQuark 
-Can re-write render using pyopengl?
+Can re-write render using pyopengl? - seems prudent.  Can learn open gl separately (in C++?) then work on porting to the game
+	pygame can still be used for input processing etc
 
-Bug: should fix the fg visible section off by 1 issue - is making it apper to have glitches
+fix the fg visible section off by 1 issue - is making it apper to have glitches
+cleanup render all panorama with the CONSTANTS and methodCalls used in renderChanged
+make some of the list values class fields for readability
+	eg fg.scrolling[0] = fg.scolling_xmultiplier
 
 minor optimizations: 
 lists to tuples
 
 minor cleanup:
 move related functions next to each other (renderQ functs)
-calculations packaged as functions (eg screenBoundryLeft)
+more calculations packaged as functions (eg screenBoundryLeft)
 
 Instead of re-render entire screen on a camera move, can we shift the entire screen and re-render the shifted off part?
 
-*On a branch renderAnimatedChanges
-	slows down when putting more than 1 panorama in motion, only on "render changed"
-		is it re-rending same sections many times?
-			if so, perhaps rethink render box algorithm - for background, maybe just think of one screen
-			surface, and filling in needed sections (so just increase the render box if one already 			exists)
-
-   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-    114/1    0.004    0.000   36.506   36.506 {built-in method builtins.exec}
-        1    0.027    0.027   36.506   36.506 main.py:5(<module>)
-     1523    0.002    0.000   31.901    0.021 game.py:88(render)
-     1523    0.019    0.000   31.899    0.021 render.py:82(render)
-     2936    0.280    0.000   18.358    0.006 render.py:381(renderChangedPanorama)
-    37907   18.087    0.000   18.087    0.000 {method 'blit' of 'pygame.Surface' objects}
-     1469    0.019    0.000   13.498    0.009 render.py:116(updateAnimatedIndex)
-     2079    0.015    0.000   13.440    0.006 render.py:598(addRenderBox_changedPanorama)
-     4158   10.998    0.003   13.425    0.003 render.py:585(addChangedTilesFromRenderBox) **** bottleneck
-
-
-NOTE THE MAIN ISSUE IS THAT WE ARE ADDING ALL OF THE TILES IN THE vs WHEN ONLY A PORTION IS ON SCREEN!
-	TRIM THE VS BEOFRE THE RENDER QUEUE	
-
-
-
 update changed actors algorithm to re-render them if on a changed tile
-
-changed panorama: could be some redundant arithmatic for checking boundries of VS and Box
-	when adding a full vs from animated update, maybe more prudent to trim the boundaries to screen here
 
 profiling:
 	render all panorama: 3ms per call (called twice per render.. 1ms per panorama?)
@@ -53,11 +31,6 @@ fullscreen mode?
 	get screen res, keep same ratio and create black border around rest?  Then only update to the actual playing 	area
 	should also add ability to exit with escape key
 	
-
-if tiles are animated, either always animate all, or calculate the tile animation switch outside and render all on switches
-	this could work for animated backgrounds as well, though not moving
-	for moving, can add to render queue only the sections that are visible
-
 features:
 Sprites for actors
 Animate actors
@@ -78,11 +51,6 @@ buttomap
 
 BUG:
 default action trying to access depcrecated levelLayout Object
-the visible section for foreground is off by one in the database (1101 not 1100)
-
-
-Need to decide if (height, width) or (width, height)
-probably should do (height, width) since that is === to (rows, columns), but be consitent
 
 should gameCamera just be in renderer?
 	cleanup camera references
