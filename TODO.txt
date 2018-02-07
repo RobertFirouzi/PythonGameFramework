@@ -2,10 +2,12 @@ PROJECT CharmQuark
 Can re-write render using pyopengl? - seems prudent.  Can learn open gl separately (in C++?) then work on porting to the game
 	pygame can still be used for input processing etc
 
-fix the fg visible section off by 1 issue - is making it apper to have glitches
-cleanup render all panorama with the CONSTANTS and methodCalls used in renderChanged
-make some of the list values class fields for readability
-	eg fg.scrolling[0] = fg.scolling_xmultiplier
+update changed actors algorithm to re-render them if on a changed tile
+Sprites for actors
+Animate actors
+
+Instead of re-render entire screen on a camera move, can we shift the entire screen and re-render the shifted off part?
+
 
 minor optimizations: 
 lists to tuples
@@ -13,19 +15,9 @@ lists to tuples
 minor cleanup:
 move related functions next to each other (renderQ functs)
 more calculations packaged as functions (eg screenBoundryLeft)
-
-Instead of re-render entire screen on a camera move, can we shift the entire screen and re-render the shifted off part?
-
-update changed actors algorithm to re-render them if on a changed tile
-
-profiling:
-	render all panorama: 3ms per call (called twice per render.. 1ms per panorama?)
-	render all lower tile: 2 ms per call
-	handle events: 1 ms per call (seems high, is it the render box?)
-	render all upper tile: <1ms per call (much less tiles to render)
-
-combine the upper tile/lower tile algorith?
-add methods to render list from game object?
+cleanup render all panorama with the CONSTANTS and methodCalls used in renderChanged
+make some of the list values class fields for readability
+	eg fg.scrolling[0] = fg.scolling_xmultiplier
 
 fullscreen mode?
 	get screen res, keep same ratio and create black border around rest?  Then only update to the actual playing 	area
@@ -37,6 +29,8 @@ Animate actors
 Weather or other visual ambient affects
 Special effects (eg: add a spell cast animation, or any special animation call)
 HUD
+Text
+Menu
 
 debug:
 right click a tile and be able to change its tilemap index?
@@ -64,10 +58,7 @@ sound logging/error checking is overboard, proably don't need now that things ar
   (Assume the API is correctly used by the programmer, and trust to the unit tests?) 
 
 RENDER
-make renderLevel (render menu, cutscene, etc) their own methods.  Set the game.render method
-on a load (removes a branch from render, cleans up code)
-	can make seperate functions for whether tiles/panoramas are animated, then upate the refernece in render
-	when loading a level - cleans up code and removes some branches during render()
+Tile animations for each tile instead of as a tilemap? - Might not be needed
 
 TESTING:
 Render changed may have bugs not uncovered (like the overshoot/negative bug).  investigate

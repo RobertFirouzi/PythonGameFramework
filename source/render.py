@@ -39,52 +39,6 @@ class Renderer:
         self.renderQueue = []
         self.framecount = 0 #a running count of frame ticks to animate images
 
-        self.renderChangedMethods = [] #This will be the list of render functions to run
-        self.renderAllMethods = []
-
-
-    def loadAssets(self, levelData):
-        self.framecount = 0 #reset framecount
-        self.levelData = levelData #TODO may not need this reference
-        self.lowerTileMap = levelData.lowerTileMap
-        self.upperTileMap = levelData.upperTileMap
-        self.backgrounds = levelData.backgrounds
-        self.foregrounds = levelData.foregrounds
-        self.actors = levelData.actors
-
-        #TODO setup data structure for actors
-        self.actorDict = {} #Load actor images
-        # for actor in self.actors:
-        #     if type(actor) is StaticSprite: #TODO this will be type Sprite or similar
-        #         if self.actorDict.get(actor.image) == None:
-        #             self.actorDict[actor.image] = pygame.image.load(actor.path+actor.image).convert_alpha()
-
-        self.animatedPanorama = False #if this is true, must always re-render entire screen every frame
-
-        for background in self.backgrounds:
-            if background.isAnimated:
-                self.animatedPanorama = True
-                background.image = loadAnimatedPanoramas(background)
-            else:
-                background.image = loadPanorama(background)
-            if background.isMotion_X:
-                self.animatedPanorama = True
-            if background.isMotion_Y:
-                self.animatedPanorama = True
-
-        for foreground in self.foregrounds:
-            if foreground.isAnimated:
-                self.animatedPanorama = True
-                foreground.image = loadAnimatedPanoramas(foreground)
-            else:
-                foreground.image = loadPanorama(foreground)
-            if foreground.isMotion_X:
-                self.animatedPanorama = True
-            if foreground.isMotion_Y:
-                self.animatedPanorama = True
-
-        self.loadTileMapImages()
-
     #this will just render game levels - create a seperate method for menus, and perhaps cutscenes
     def render(self):
         self.cameraTile= self.camera.tile
@@ -95,23 +49,22 @@ class Renderer:
             self.isRenderAll = True
 
         if self.lowerTileMap is not None: #quick hack to make sure a level is loaded
+
             self.updateAnimatedIndex() #update any frame indexes for animated tiles
 
-            if self.isRenderAll: #know rend
+            if self.isRenderAll: #render the entire screen all layers
                 self.renderAllPanorama(BG = True)
-                self.renderAllLowerTile()
+                self.renderAllTiles(lower = True)
                 self.renderAllActors()
-                self.renderAllUpperTile()
+                self.renderAllTiles(lower = False)
                 self.renderAllPanorama(BG = False)
 
-            else:
+            else: #render all layers for each changed section, based on render Q and render Tiles
                 self.renderChangedPanorama(BG = True)
-                self.renderChangedLowerTile()
+                self.renderChangedTiles(lower = True)
                 self.renderChangedActors()
-                self.renderChangedUpperTile()
+                self.renderChangedTiles(lower = False)
                 self.renderChangedPanorama(BG = False)
-
-                self.debug_drawRenderQ()
 
             self.renderQueue.clear()
             self.renderedLowerTiles.clear()
@@ -120,47 +73,6 @@ class Renderer:
             self.isRenderAll = False
 
         self.framecount+=1
-
-    def debug_drawRenderQ(self):
-        HOWTHICK = 1
-
-        for renderBox in self.renderQueue:
-            renderBox = [renderBox[0] - self.screenBoundryLeft(),
-                         renderBox[1]- self.screenBoundryLeft(),
-                         renderBox[2]- self.screenBoundryTop(),
-                         renderBox[3]- self.screenBoundryTop()]
-
-            pygame.draw.line(self.screen,
-                             PRAM.COLOR_BLACK,
-                             (renderBox[LEFT_EDGE], renderBox[TOP_EDGE]),
-                             (renderBox[RIGHT_EDGE], renderBox[TOP_EDGE]),
-                             HOWTHICK)
-            pygame.draw.line(self.screen,
-                             PRAM.COLOR_BLACK,
-                             (renderBox[LEFT_EDGE], renderBox[TOP_EDGE]),
-                             (renderBox[LEFT_EDGE], renderBox[BOTTOM_EDGE]),
-                             HOWTHICK)
-            pygame.draw.line(self.screen,
-                             PRAM.COLOR_BLACK,
-                             (renderBox[RIGHT_EDGE], renderBox[TOP_EDGE]),
-                             (renderBox[RIGHT_EDGE], renderBox[BOTTOM_EDGE]),
-                             HOWTHICK)
-            pygame.draw.line(self.screen,
-                             PRAM.COLOR_BLACK,
-                             (renderBox[LEFT_EDGE], renderBox[BOTTOM_EDGE]),
-                             (renderBox[RIGHT_EDGE], renderBox[BOTTOM_EDGE]),
-                             HOWTHICK)
-            pygame.draw.line(self.screen,
-                             PRAM.COLOR_BLACK,
-                             (renderBox[LEFT_EDGE], renderBox[TOP_EDGE]),
-                             (renderBox[RIGHT_EDGE], renderBox[BOTTOM_EDGE]),
-                             HOWTHICK)
-            pygame.draw.line(self.screen,
-                             PRAM.COLOR_BLACK,
-                             (renderBox[RIGHT_EDGE], renderBox[TOP_EDGE]),
-                             (renderBox[LEFT_EDGE], renderBox[BOTTOM_EDGE]),
-                             HOWTHICK)
-
 
     #updates the index of any animated images
     def updateAnimatedIndex(self):
@@ -214,37 +126,18 @@ class Renderer:
             if addRenderBox and not self.isRenderAll:
                 self.addRenderBox_changedPanorama(fg)
 
-
-    #depending on the level, certain render methods will be loaded
-    #if a level has animated panoramas, or tiles, use those methods.  Else the simpler methods.
-    #add the render call for weather effects, etc if necessary
-    def renderList(self): #TODO - not usre if going with this idea or not
-        self.cameraTile= self.camera.tile
-        self.cameraOffset = self.camera.offset
-        self.cameraPosition = self.camera.position
-
-        if self.camera.moveFlag or self.animatedPanorama:
-            for method in self.renderAllMethods:
-                method()
+    def renderAllTiles(self, lower = True):
+        if lower:
+            tilemap = self.lowerTileMap
         else:
-            for method in self.renderChangedMethods:
-                method()
+            tilemap = self.upperTileMap
+        tiles = tilemap.tiles #for efficiency, quick reference to ptr
+        image = tilemap.image
+        animatedDivide_px = tilemap.animatedDivide_px
+        animatedOffsets = tilemap.animatedOffsets
 
-        self.renderQueue.clear()
-        self.renderedLowerTiles.clear()
-        self.renderedUpperTiles.clear()
-        self.camera.moveFlag = False
-
-        self.framecount += 1
-
-    def renderAllLowerTile(self):
-        tiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
-        image = self.lowerTileMap.image
-        animatedDivide_px = self.lowerTileMap.animatedDivide_px
-        animatedOffsets = self.lowerTileMap.animatedOffsets
-
-        if self.lowerTileMap.isAnimated:
-            frameIndex = self.lowerTileMap.frameIndex
+        if tilemap.isAnimated:
+            frameIndex = tilemap.frameIndex
         else:
             frameIndex = 0
 
@@ -263,45 +156,24 @@ class Renderer:
                                      PRAM.TILESIZE, #tilemap  width
                                      PRAM.TILESIZE)) #tilemap height
 
-    def renderAllUpperTile(self):
-        tiles = self.upperTileMap.tiles #for efficiency, quick reference to ptr
-        image = self.upperTileMap.image
-        animatedDivide_px = self.upperTileMap.animatedDivide_px
-        animatedOffsets = self.upperTileMap.animatedOffsets
+    def renderChangedTiles(self, lower = True):
+        if lower:
+            tilemap = self.lowerTileMap
+            renderedTiles = self.renderedLowerTiles
+        else:
+            tilemap = self.upperTileMap
+            renderedTiles = self.renderedUpperTiles
+        tiles = tilemap.tiles
+        image = tilemap.image
+        animatedDivide_px = tilemap.animatedDivide_px
+        animatedOffsets = tilemap.animatedOffsets
 
-        if self.upperTileMap.isAnimated:
-            frameIndex = self.upperTileMap.frameIndex
+        if tilemap.isAnimated:
+            frameIndex = tilemap.frameIndex
         else:
             frameIndex = 0
 
-        for y in range(PRAM.DISPLAY_TILE_HEIGHT):
-            yOffset = y * PRAM.TILESIZE - self.cameraOffset[1]
-            for x in range(PRAM.DISPLAY_TILE_WIDTH):
-                tile = tiles[y + self.cameraTile[1]][x + self.cameraTile[0]]
-                if tile[0] != -1:
-                    xOffset = x* PRAM.TILESIZE - self.cameraOffset[0]
-                    if tile[1] >= animatedDivide_px:
-                        tile = animatedOffsets.get((tile[0],tile[1]))[frameIndex]
-                    self.screen.blit(image,
-                                     (xOffset, yOffset), #screen position
-                                     (tile[0], #tileMap x crop position
-                                      tile[1], #tileMap y crop position
-                                     PRAM.TILESIZE, #tileMap width
-                                     PRAM.TILESIZE)) #tileMap height
-
-
-    def renderChangedLowerTile(self):
-        tiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
-        image = self.lowerTileMap.image
-        animatedDivide_px = self.lowerTileMap.animatedDivide_px
-        animatedOffsets = self.lowerTileMap.animatedOffsets
-
-        if self.lowerTileMap.isAnimated:
-            frameIndex = self.lowerTileMap.frameIndex
-        else:
-            frameIndex = 0
-
-        for changedTile, isRendered in self.renderedLowerTiles.items():
+        for changedTile, isRendered in renderedTiles.items():
             if not isRendered:
                 tile = tiles[changedTile[0]][changedTile[1]] #the tilemap image location
                 if tile[1] >= animatedDivide_px:
@@ -314,34 +186,7 @@ class Renderer:
                                  PRAM.TILESIZE,
                                  PRAM.TILESIZE)) #blit one tile
 
-                self.renderedLowerTiles[(changedTile[0],changedTile[1])] = True
-
-    def renderChangedUpperTile(self):
-        tiles = self.upperTileMap.tiles #for efficiency, quick reference to ptr
-        image = self.upperTileMap.image
-
-        animatedDivide_px = self.upperTileMap.animatedDivide_px
-        animatedOffsets = self.upperTileMap.animatedOffsets
-
-        if self.upperTileMap.isAnimated:
-            frameIndex = self.upperTileMap.frameIndex
-        else:
-            frameIndex = 0
-
-        for changedTile, isRendered in self.renderedUpperTiles.items():
-            if not isRendered:
-                tile = tiles[changedTile[0]][changedTile[1]] #the tilemap image location
-                if tile[1] >= animatedDivide_px:
-                    tile = animatedOffsets.get((tile[0], tile[1]))[frameIndex]
-                self.screen.blit(image,
-                                 ((changedTile[1]  - self.cameraTile[0]) * PRAM.TILESIZE  - self.cameraOffset[0], #x screen position
-                                  (changedTile[0] - self.cameraTile[1]) * PRAM.TILESIZE  - self.cameraOffset[1]), #y screen position
-                                 (tile[0], #tilemap image coordinates
-                                  tile[1],
-                                 PRAM.TILESIZE,
-                                 PRAM.TILESIZE)) #blit one tile
-
-                self.renderedUpperTiles[(changedTile[0],changedTile[1])] = True
+                renderedTiles[(changedTile[0],changedTile[1])] = True
 
     def renderAllPanorama(self, BG = True): #if BG render backgrounds, else foregrounds
         screenOffset = (self.cameraTile[0]*PRAM.TILESIZE + self.cameraOffset[0],
@@ -676,7 +521,6 @@ class Renderer:
                     if upperTile[1] >= animatedDivide_px:
                         minx = (x + cameraTile[0])*PRAM.TILESIZE
                         maxx = minx+PRAM.TILESIZE
-                        # self.renderQueue.append((minx, maxx, miny, maxy))  # for panorama rendering
                         self.addToRenderQueue((minx, maxx, miny, maxy))
                         self.renderedUpperTiles[(tileOffset_y, tileOffset_x)] = False
                         lowerTile = lowerTiles[tileOffset_y][tileOffset_x]
@@ -781,18 +625,6 @@ class Renderer:
         else:
             return [candidateBox] #there is no overlap with this box and any in the current render Q
 
-    def loadTileMapImages(self):
-        if self.lowerTileMap.alpha:
-            self.lowerTileMap.image = pygame.image.load(self.lowerTileMap.filePath).convert_alpha()
-        else:
-            self.lowerTileMap.image = pygame.image.load(self.lowerTileMap.filePath).convert()
-
-        if self.upperTileMap.alpha:
-            self.upperTileMap.image = pygame.image.load(self.upperTileMap.filePath).convert_alpha()
-        else:
-            self.upperTileMap.image = pygame.image.load(self.upperTileMap.filePath).convert()
-
-
     #given absolute box coords, trim to the boundries of the visible screen
     def trimBoxToScreen(self, box):
         trimmedBox = list(box)
@@ -806,7 +638,6 @@ class Renderer:
             trimmedBox[BOTTOM_EDGE] = self.screenBoundryBottom()
 
         return trimmedBox
-
 
     #given 2boxes [left,right,top,bottom], return a box where they overlap, or an [] if no overlap
     def getBoxOverlap(self, box1, box2):
@@ -857,7 +688,6 @@ class Renderer:
             return True
         return False
 
-
     def screenBoundryLeft(self):
         return (self.cameraTile[0]*PRAM.TILESIZE) + self.cameraOffset[0]
 
@@ -869,6 +699,99 @@ class Renderer:
 
     def screenBoundryBottom(self):
         return (self.cameraTile[1] * PRAM.TILESIZE) + self.cameraOffset[1] + PRAM.DISPLAY_HEIGHT
+
+    def loadAssets(self, levelData):
+        self.framecount = 0 #reset framecount
+        self.levelData = levelData #TODO may not need this reference
+        self.lowerTileMap = levelData.lowerTileMap
+        self.upperTileMap = levelData.upperTileMap
+        self.backgrounds = levelData.backgrounds
+        self.foregrounds = levelData.foregrounds
+        self.actors = levelData.actors
+
+        #TODO setup data structure for actors
+        self.actorDict = {} #Load actor images
+        # for actor in self.actors:
+        #     if type(actor) is StaticSprite: #TODO this will be type Sprite or similar
+        #         if self.actorDict.get(actor.image) == None:
+        #             self.actorDict[actor.image] = pygame.image.load(actor.path+actor.image).convert_alpha()
+
+        self.animatedPanorama = False #if this is true, must always re-render entire screen every frame
+
+        for background in self.backgrounds:
+            if background.isAnimated:
+                self.animatedPanorama = True
+                background.image = loadAnimatedPanoramas(background)
+            else:
+                background.image = loadPanorama(background)
+            if background.isMotion_X:
+                self.animatedPanorama = True
+            if background.isMotion_Y:
+                self.animatedPanorama = True
+
+        for foreground in self.foregrounds:
+            if foreground.isAnimated:
+                self.animatedPanorama = True
+                foreground.image = loadAnimatedPanoramas(foreground)
+            else:
+                foreground.image = loadPanorama(foreground)
+            if foreground.isMotion_X:
+                self.animatedPanorama = True
+            if foreground.isMotion_Y:
+                self.animatedPanorama = True
+
+        self.loadTileMapImages()
+
+    def loadTileMapImages(self):
+        if self.lowerTileMap.alpha:
+            self.lowerTileMap.image = pygame.image.load(self.lowerTileMap.filePath).convert_alpha()
+        else:
+            self.lowerTileMap.image = pygame.image.load(self.lowerTileMap.filePath).convert()
+
+        if self.upperTileMap.alpha:
+            self.upperTileMap.image = pygame.image.load(self.upperTileMap.filePath).convert_alpha()
+        else:
+            self.upperTileMap.image = pygame.image.load(self.upperTileMap.filePath).convert()
+
+    def debug_drawRenderQ(self):
+        HOWTHICK = 1
+
+        for renderBox in self.renderQueue:
+            renderBox = [renderBox[0] - self.screenBoundryLeft(),
+                         renderBox[1] - self.screenBoundryLeft(),
+                         renderBox[2] - self.screenBoundryTop(),
+                         renderBox[3] - self.screenBoundryTop()]
+
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[LEFT_EDGE], renderBox[TOP_EDGE]),
+                             (renderBox[RIGHT_EDGE], renderBox[TOP_EDGE]),
+                             HOWTHICK)
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[LEFT_EDGE], renderBox[TOP_EDGE]),
+                             (renderBox[LEFT_EDGE], renderBox[BOTTOM_EDGE]),
+                             HOWTHICK)
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[RIGHT_EDGE], renderBox[TOP_EDGE]),
+                             (renderBox[RIGHT_EDGE], renderBox[BOTTOM_EDGE]),
+                             HOWTHICK)
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[LEFT_EDGE], renderBox[BOTTOM_EDGE]),
+                             (renderBox[RIGHT_EDGE], renderBox[BOTTOM_EDGE]),
+                             HOWTHICK)
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[LEFT_EDGE], renderBox[TOP_EDGE]),
+                             (renderBox[RIGHT_EDGE], renderBox[BOTTOM_EDGE]),
+                             HOWTHICK)
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[RIGHT_EDGE], renderBox[TOP_EDGE]),
+                             (renderBox[LEFT_EDGE], renderBox[BOTTOM_EDGE]),
+                             HOWTHICK)
 
 #use pygame image.load, convert alpha if necessary, return the image file
 def loadPanorama(panorama):
