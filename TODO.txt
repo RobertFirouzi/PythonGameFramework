@@ -2,12 +2,12 @@ PROJECT CharmQuark
 Can re-write render using pyopengl? - seems prudent.  Can learn open gl separately (in C++?) then work on porting to the game
 	pygame can still be used for input processing etc
 
+merge the renderAnimatedChanges back to master, create a new branch for animated sprites
 update changed actors algorithm to re-render them if on a changed tile
 Sprites for actors
 Animate actors
 
 Instead of re-render entire screen on a camera move, can we shift the entire screen and re-render the shifted off part?
-
 
 minor optimizations: 
 lists to tuples
@@ -18,6 +18,7 @@ more calculations packaged as functions (eg screenBoundryLeft)
 cleanup render all panorama with the CONSTANTS and methodCalls used in renderChanged
 make some of the list values class fields for readability
 	eg fg.scrolling[0] = fg.scolling_xmultiplier
+Uml could use an update
 
 fullscreen mode?
 	get screen res, keep same ratio and create black border around rest?  Then only update to the actual playing 	area
