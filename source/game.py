@@ -50,7 +50,7 @@ class Game:
         self.eventHandler.borders = self.levelData.borders
         self.eventHandler.eventTiles = self.levelData.eventTiles
 
-       #TODO - add to the rednerMethod lists based on the levelData
+       #TODO - add to the renderMethod lists based on the levelData
         #currently triggered on the tile
 #         for event in self.gameScene.levelEvents: #the triggers need to be initialized for level events
 #             if type(event) is LevelTriggerTouch:

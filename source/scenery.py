@@ -74,6 +74,9 @@ class PanoramicImage:
         self.framesPerImage = round(PRAM.GAME_FPS / self.animated_fps, 2)
         self.imageIndex = 0 #tracks which image to display, if animated
 
+        self.motionOffset_X = 0 #used to determine if re-render needed on render changed call
+        self.motionOffset_Y = 0
+
     def updateFrameIndex(self):
         self.imageIndex = (self.imageIndex + 1) % self.numbImages
 

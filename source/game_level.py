@@ -173,7 +173,7 @@ class LevelData:
             
             self.foregrounds.append(panoramicImage)
 
-        self.backgrounds = tuple(self.backgrounds)
+        self.foregrounds = tuple(self.foregrounds)
 
 # Data container for a game menu, which can be loaded as an event (akin to loading a level).
 #     EG load the title screen, or options, save/load etc...

@@ -2,8 +2,11 @@ from actors import SimpleBox
 import pygame
 import parameters as PRAM
 
-import os #Temporary fix to load animated bakground images - remove after DB updated
-from time import time
+#renderQ and visibleSection indexes
+LEFT_EDGE = 0
+RIGHT_EDGE = 1
+TOP_EDGE = 2
+BOTTOM_EDGE = 3
 
 #renderMethods list populated by game depending on the needs of the currently loaded level/menu
 class Renderer:
@@ -36,75 +39,31 @@ class Renderer:
         self.renderQueue = []
         self.framecount = 0 #a running count of frame ticks to animate images
 
-        self.renderChangedMethods = [] #This will be the list of render functions to run
-        self.renderAllMethods = []
-
-    def loadAssets(self, levelData):
-        self.framecount = 0 #reset framecount
-        self.levelData = levelData #TODO may not need this reference
-        self.lowerTileMap = levelData.lowerTileMap
-        self.upperTileMap = levelData.upperTileMap
-        self.backgrounds = levelData.backgrounds
-        self.foregrounds = levelData.foregrounds
-        self.actors = levelData.actors
-
-        #TODO setup data structure for actors
-        self.actorDict = {} #Load actor images
-        # for actor in self.actors:
-        #     if type(actor) is StaticSprite: #TODO this will be type Sprite or similar
-        #         if self.actorDict.get(actor.image) == None:
-        #             self.actorDict[actor.image] = pygame.image.load(actor.path+actor.image).convert_alpha()
-
-        self.animatedPanorama = False #if this is true, must always re-render entire screen every frame
-
-        for background in self.backgrounds:
-            if background.isAnimated:
-                self.animatedPanorama = True
-                background.image = loadAnimatedPanoramas(background)
-            else:
-                background.image = loadPanorama(background)
-            if background.isMotion_X:
-                self.animatedPanorama = True
-            if background.isMotion_Y:
-                self.animatedPanorama = True
-
-        for foreground in self.foregrounds:
-            if foreground.isAnimated:
-                self.animatedPanorama = True
-                foreground.image = loadAnimatedPanoramas(foreground)
-            else:
-                foreground.image = loadPanorama(foreground)
-            if foreground.isMotion_X:
-                self.animatedPanorama = True
-            if foreground.isMotion_Y:
-                self.animatedPanorama = True
-
-        self.loadTileMapImages()
-
     #this will just render game levels - create a seperate method for menus, and perhaps cutscenes
     def render(self):
         self.cameraTile= self.camera.tile
         self.cameraOffset = self.camera.offset
         self.cameraPosition = self.camera.position
 
-        if  self.camera.moveFlag or self.animatedPanorama:
+        if  self.camera.moveFlag:# or self.animatedPanorama:
             self.isRenderAll = True
 
         if self.lowerTileMap is not None: #quick hack to make sure a level is loaded
+
             self.updateAnimatedIndex() #update any frame indexes for animated tiles
 
-            if self.isRenderAll: #know rend
+            if self.isRenderAll: #render the entire screen all layers
                 self.renderAllPanorama(BG = True)
-                self.renderAllLowerTile()
+                self.renderAllTiles(lower = True)
                 self.renderAllActors()
-                self.renderAllUpperTile()
+                self.renderAllTiles(lower = False)
                 self.renderAllPanorama(BG = False)
 
-            else:
+            else: #render all layers for each changed section, based on render Q and render Tiles
                 self.renderChangedPanorama(BG = True)
-                self.renderChangedLowerTile()
+                self.renderChangedTiles(lower = True)
                 self.renderChangedActors()
-                self.renderChangedUpperTile()
+                self.renderChangedTiles(lower = False)
                 self.renderChangedPanorama(BG = False)
 
             self.renderQueue.clear()
@@ -121,57 +80,64 @@ class Renderer:
             if int(self.framecount % self.lowerTileMap.framesPerImage) == 0:  # time to change the pic
                 self.lowerTileMap.updateFrameIndex()
                 if not self.isRenderAll: #if everything is being rendered, don't need to add to changed q
-                    self.addAnimatedLowerTilesRenderBoxes()
-                    #TODO - update the render queue with any tiles onscreen which are animated
+                    self.addRenderBoxes_AnimatedLowerTiles()
 
         if self.upperTileMap.isAnimated:
             if int(self.framecount % self.upperTileMap.framesPerImage) == 0:  # time to change the pic
                 self.upperTileMap.updateFrameIndex()
                 if not self.isRenderAll:
-                    self.addAnimatedUpperTilesRenderBoxes()
-                    # TODO - update the render queue with any tiles onscreen which are animated
+                    self.addRenderBoxes_AnimatedUpperTiles()
 
         for bg in self.backgrounds:
+            addRenderBox = False
             if bg.isAnimated:
                 if int(self.framecount%bg.framesPerImage)==0: #time to change the pic
                     bg.updateFrameIndex()
+                    addRenderBox = True
+            if bg.isMotion_X:
+                motionOffset = int(bg.motion_x_multiplier * self.framecount)
+                if motionOffset != bg.motionOffset_X: #panorama needs to move
+                    bg.motionOffset_X = motionOffset
+                    addRenderBox = True #if panorama needs to scroll, re-render visibile sections
+            if bg.isMotion_Y:
+                motionOffset = int(bg.motion_y_multiplier * self.framecount)
+                if motionOffset != bg.motionOffset_Y:
+                    bg.motionOffset_Y = motionOffset
+                    addRenderBox = True
+            if addRenderBox and not self.isRenderAll:
+                self.addRenderBox_changedPanorama(bg)
 
         for fg in self.foregrounds:
+            addRenderBox = False
             if fg.isAnimated:
                 if int(self.framecount%fg.framesPerImage)==0: #time to change the pic
                     fg.updateFrameIndex()
+                    addRenderBox = True
+            if fg.isMotion_X:
+                motionOffset = int(fg.motion_x_multiplier * self.framecount)
+                if motionOffset != fg.motionOffset_X: #panorama needs to move
+                    fg.motionOffset_X = motionOffset
+                    addRenderBox = True #if panorama needs to scroll, re-render visibile sections
+            if fg.isMotion_Y:
+                motionOffset = int(fg.motion_y_multiplier * self.framecount)
+                if motionOffset != fg.motionOffset_Y:
+                    fg.motionOffset_Y = motionOffset
+                    addRenderBox = True
+            if addRenderBox and not self.isRenderAll:
+                self.addRenderBox_changedPanorama(fg)
 
-    #depending on the level, certain render methods will be loaded
-    #if a level has animated panoramas, or tiles, use those methods.  Else the simpler methods.
-    #add the render call for weather effects, etc if necessary
-    def renderList(self): #TODO - not usre if going with this idea or not
-        self.cameraTile= self.camera.tile
-        self.cameraOffset = self.camera.offset
-        self.cameraPosition = self.camera.position
-
-        if self.camera.moveFlag or self.animatedPanorama:
-            for method in self.renderAllMethods:
-                method()
+    def renderAllTiles(self, lower = True):
+        if lower:
+            tilemap = self.lowerTileMap
         else:
-            for method in self.renderChangedMethods:
-                method()
+            tilemap = self.upperTileMap
+        tiles = tilemap.tiles #for efficiency, quick reference to ptr
+        image = tilemap.image
+        animatedDivide_px = tilemap.animatedDivide_px
+        animatedOffsets = tilemap.animatedOffsets
 
-        self.renderQueue.clear()
-        self.renderedLowerTiles.clear()
-        self.renderedUpperTiles.clear()
-        self.camera.moveFlag = False
-
-        self.framecount += 1
-
-    #TODO - assuming is animated, create seperate methods for animated and non animated tiles load correct on on level load
-    def renderAllLowerTile(self):
-        tiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
-        image = self.lowerTileMap.image
-        animatedDivide_px = self.lowerTileMap.animatedDivide_px
-        animatedOffsets = self.lowerTileMap.animatedOffsets
-
-        if self.lowerTileMap.isAnimated:
-            frameIndex = self.lowerTileMap.frameIndex
+        if tilemap.isAnimated:
+            frameIndex = tilemap.frameIndex
         else:
             frameIndex = 0
 
@@ -190,45 +156,24 @@ class Renderer:
                                      PRAM.TILESIZE, #tilemap  width
                                      PRAM.TILESIZE)) #tilemap height
 
-    def renderAllUpperTile(self):
-        tiles = self.upperTileMap.tiles #for efficiency, quick reference to ptr
-        image = self.upperTileMap.image
-        animatedDivide_px = self.upperTileMap.animatedDivide_px
-        animatedOffsets = self.upperTileMap.animatedOffsets
+    def renderChangedTiles(self, lower = True):
+        if lower:
+            tilemap = self.lowerTileMap
+            renderedTiles = self.renderedLowerTiles
+        else:
+            tilemap = self.upperTileMap
+            renderedTiles = self.renderedUpperTiles
+        tiles = tilemap.tiles
+        image = tilemap.image
+        animatedDivide_px = tilemap.animatedDivide_px
+        animatedOffsets = tilemap.animatedOffsets
 
-        if self.upperTileMap.isAnimated:
-            frameIndex = self.upperTileMap.frameIndex
+        if tilemap.isAnimated:
+            frameIndex = tilemap.frameIndex
         else:
             frameIndex = 0
 
-        for y in range(PRAM.DISPLAY_TILE_HEIGHT):
-            yOffset = y * PRAM.TILESIZE - self.cameraOffset[1]
-            for x in range(PRAM.DISPLAY_TILE_WIDTH):
-                tile = tiles[y + self.cameraTile[1]][x + self.cameraTile[0]]
-                if tile[0] != -1:
-                    xOffset = x* PRAM.TILESIZE - self.cameraOffset[0]
-                    if tile[1] >= animatedDivide_px:
-                        tile = animatedOffsets.get((tile[0],tile[1]))[frameIndex]
-                    self.screen.blit(image,
-                                     (xOffset, yOffset), #screen position
-                                     (tile[0], #tileMap x crop position
-                                      tile[1], #tileMap y crop position
-                                     PRAM.TILESIZE, #tileMap width
-                                     PRAM.TILESIZE)) #tileMap height
-
-
-    def renderChangedLowerTile(self):
-        tiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
-        image = self.lowerTileMap.image
-        animatedDivide_px = self.lowerTileMap.animatedDivide_px
-        animatedOffsets = self.lowerTileMap.animatedOffsets
-
-        if self.lowerTileMap.isAnimated:
-            frameIndex = self.lowerTileMap.frameIndex
-        else:
-            frameIndex = 0
-
-        for changedTile, isRendered in self.renderedLowerTiles.items():
+        for changedTile, isRendered in renderedTiles.items():
             if not isRendered:
                 tile = tiles[changedTile[0]][changedTile[1]] #the tilemap image location
                 if tile[1] >= animatedDivide_px:
@@ -241,37 +186,10 @@ class Renderer:
                                  PRAM.TILESIZE,
                                  PRAM.TILESIZE)) #blit one tile
 
-                self.renderedLowerTiles[(changedTile[0],changedTile[1])] = True
-
-    def renderChangedUpperTile(self):
-        tiles = self.upperTileMap.tiles #for efficiency, quick reference to ptr
-        image = self.upperTileMap.image
-
-        animatedDivide_px = self.upperTileMap.animatedDivide_px
-        animatedOffsets = self.upperTileMap.animatedOffsets
-
-        if self.upperTileMap.isAnimated:
-            frameIndex = self.upperTileMap.frameIndex
-        else:
-            frameIndex = 0
-
-        for changedTile, isRendered in self.renderedUpperTiles.items():
-            if not isRendered:
-                tile = tiles[changedTile[0]][changedTile[1]] #the tilemap image location
-                if tile[1] >= animatedDivide_px:
-                    tile = animatedOffsets.get((tile[0], tile[1]))[frameIndex]
-                self.screen.blit(image,
-                                 ((changedTile[1]  - self.cameraTile[0]) * PRAM.TILESIZE  - self.cameraOffset[0], #x screen position
-                                  (changedTile[0] - self.cameraTile[1]) * PRAM.TILESIZE  - self.cameraOffset[1]), #y screen position
-                                 (tile[0], #tilemap image coordinates
-                                  tile[1],
-                                 PRAM.TILESIZE,
-                                 PRAM.TILESIZE)) #blit one tile
-
-                self.renderedUpperTiles[(changedTile[0],changedTile[1])] = True
+                renderedTiles[(changedTile[0],changedTile[1])] = True
 
     def renderAllPanorama(self, BG = True): #if BG render backgrounds, else foregrounds
-        screenOffset = (self.cameraTile[0]*PRAM.TILESIZE + self.cameraOffset[0], 
+        screenOffset = (self.cameraTile[0]*PRAM.TILESIZE + self.cameraOffset[0],
                         self.cameraTile[1]*PRAM.TILESIZE + self.cameraOffset[1])
         if BG:
             images = self.backgrounds
@@ -279,18 +197,8 @@ class Renderer:
             images = self.foregrounds
 
         for fg in images:
-            if fg.isMotion_X:
-                motion_x_offset_px = int(fg.motion_x_multiplier * self.framecount)
-            else:
-                motion_x_offset_px = 0
-
-            if fg.isMotion_Y:
-                motion_y_offset_px = int(fg.motion_y_multiplier * self.framecount)
-            else:
-                motion_y_offset_px = 0
-
-            imageOffset = (((screenOffset[0]*fg.scrolling[0][0]//fg.scrolling[0][1])+motion_x_offset_px)%fg.pxSize[1],
-                           ((screenOffset[1]*fg.scrolling[1][0]//fg.scrolling[1][1])+motion_y_offset_px)%fg.pxSize[0])
+            imageOffset = (((screenOffset[0]*fg.scrolling[0][0]//fg.scrolling[0][1])+fg.motionOffset_X)%fg.pxSize[1],
+                           ((screenOffset[1]*fg.scrolling[1][0]//fg.scrolling[1][1])+fg.motionOffset_Y)%fg.pxSize[0])
 
             if fg.isAnimated:
                 displayImage = fg.image[fg.imageIndex]
@@ -363,73 +271,73 @@ class Renderer:
                         else:
                             keepGoing = False #you have blitted the entire visible section
 
-
-#Currently does not work with animated/motion backgrounds
     def renderChangedPanorama(self, BG = True):
         if BG:
             images = self.backgrounds
         else:
             images = self.foregrounds
-        
+
+        screenBoundryLeft = self.screenBoundryLeft() #pixel 0 of screen is this map pixel
+        screenBoundryTop = self.screenBoundryTop()
+
         for fg in images:
 
+            if fg.isAnimated:
+                displayImage = fg.image[fg.imageIndex]
+            else:
+                displayImage = fg.image[0]
+
             for box in self.renderQueue:
-                for vs in fg.visibleSections:
-                    
-                    #Check to see if this renderBox is within a visible section of the foreground
-                    if vs[0] <= box[1] and vs[1]>= box[0] and vs[2] <= box[3] and vs[3] >= box[2]:
-                        visibleBox = list(box)
-                        if vs[0] > box[0]:
-                            visibleBox[0] = vs[0]
-                        if vs[1] < box[1]:
-                            visibleBox[1] = vs[1]
-                        if vs[2] > box[2]:
-                            visibleBox[2] = vs[2]
-                        if vs[3] < box[3]:
-                            visibleBox[3] = vs[3]        
-                                                                                                    
-                        startScreenPos = (visibleBox[0] - (self.cameraTile[0]*PRAM.TILESIZE)  - self.cameraOffset[0], 
-                                          visibleBox[2] - (self.cameraTile[1]*PRAM.TILESIZE)  - self.cameraOffset[1])
-                        
-                        startCropX = ((self.cameraTile[0]*PRAM.TILESIZE + self.cameraOffset[0])
+                for vs in fg.visibleSections:  #vs = (left edge, right edge, top edge, bottom edge)
+                    visibleBox = self.getBoxOverlap(box, vs)
+                    if visibleBox and self.isBoxOnScreen(visibleBox):
+                        visibleBox = self.trimBoxToScreen(visibleBox)  #make sure we have a box within screen boundry
+
+                        startScreenPos = [visibleBox[LEFT_EDGE] - screenBoundryLeft,  #relative coordinate of starting image position
+                                          visibleBox[TOP_EDGE] - screenBoundryTop]
+
+                        startCropX = (screenBoundryLeft
                                       * fg.scrolling[0][0]
                                       // fg.scrolling[0][1] 
-                                      + startScreenPos[0])
-                        startCropX = startCropX % fg.pxSize[1]
-                          
-                        startCropY = ((self.cameraTile[1]*PRAM.TILESIZE + self.cameraOffset[1])
+                                      + startScreenPos[0]
+                                      + fg.motionOffset_X)
+                        startCropX = startCropX % fg.pxSize[1]  #where to start the crop from the image file
+
+                        startCropY = (screenBoundryTop
                                       * fg.scrolling[1][0]
                                       // fg.scrolling[1][1] 
-                                      + startScreenPos[1])
+                                      + startScreenPos[1]
+                                      + fg.motionOffset_Y)
                         startCropY = startCropY % fg.pxSize[0]
-                                        
+
                         currentScreenPos = startScreenPos
                         currentCropX =  startCropX
                         currentCropY = startCropY
-                        imageSizeX = visibleBox[1] - visibleBox[0] 
-                        imageSizeY = visibleBox[3] - visibleBox[2]
-                        
+
+                        imageSizeX = visibleBox[RIGHT_EDGE] - visibleBox[LEFT_EDGE] #how much of the image do we need to blit
+                        imageSizeY = visibleBox[BOTTOM_EDGE] - visibleBox[TOP_EDGE]
+
                         keepGoing = True
                         shiftX = False
                         shiftY = False
-                        
-                        #check to see if you are at the boundries of the image, and need to tile it
-                        while keepGoing:
+
+                        while keepGoing:  #check to see if you are at the boundries of the image, and need to tile it
                             if currentCropX + imageSizeX > fg.pxSize[1]:
                                 imageSizeX = fg.pxSize[1] - currentCropX
-                                shiftX = True
+                                shiftX = True #means we need to do at least 1 more blit to finish X direction
                             if currentCropY + imageSizeY > fg.pxSize[0]:
                                 imageSizeY = fg.pxSize[0] - currentCropY
                                 shiftY = True
-                                                    
-                            self.screen.blit(fg.image[0],
+
+
+                            self.screen.blit(displayImage,
                                              currentScreenPos,
                                             (currentCropX,  #image x
                                             currentCropY, #image y                                 
                                               imageSizeX, #image x width crop
                                               imageSizeY)) #image y height crop   
-                            
-                            #blit across the X direction first, then shift down the Y and reset the X  
+
+                            #blit across the X direction first, then shift down the Y and reset the X
                             if shiftX:
                                 currentScreenPos = [currentScreenPos[0] + imageSizeX, currentScreenPos[1]]
                                 currentCropX = (currentCropX + imageSizeX) % fg.pxSize[1]
@@ -439,7 +347,7 @@ class Renderer:
                                 currentScreenPos = [startScreenPos[0], currentScreenPos[1] + imageSizeY]
                                 currentCropX = startCropX
                                 imageSizeX = visibleBox[1] - visibleBox[0]
-                                currentCropY = (currentCropY + imageSizeY) % imageSizeY
+                                currentCropY = (currentCropY + imageSizeY) % fg.pxSize[0]
                                 imageSizeY = visibleBox[3] - visibleBox[2] - imageSizeY                                                
                                 shiftY = False    
                             else:
@@ -517,10 +425,17 @@ class Renderer:
 
         renderBox = (minx, maxx, miny, maxy)
         self.renderQueue.append(renderBox) #for panorama rendering
+        self.addChangedTilesFromRenderBox(renderBox) #for tile re-rendering
 
-        #Add the affected tiles to the render queues
-        xRange = (renderBox[0]//PRAM.TILESIZE, renderBox[1]//PRAM.TILESIZE)
-        yRange = (renderBox[2]//PRAM.TILESIZE, renderBox[3]//PRAM.TILESIZE)
+    def addChangedTilesFromRenderBox(self, renderBox):
+        xRange = [renderBox[0]//PRAM.TILESIZE, renderBox[1]//PRAM.TILESIZE]
+        yRange = [renderBox[2]//PRAM.TILESIZE, renderBox[3]//PRAM.TILESIZE]
+        #don't check tiles beyond bound of level
+        if xRange[1] > self.levelData.size[0]-1:
+            xRange[1] = self.levelData.size[0]-1
+        if yRange[1] > self.levelData.size[1]-1:
+            yRange[1] = self.levelData.size[1]-1
+
         for x in range(xRange[0], xRange[1]):
             for y in range(yRange[0], yRange[1]):
                 lowerTile = self.lowerTileMap.tiles[y][x]
@@ -530,7 +445,41 @@ class Renderer:
                 if self.renderedUpperTiles.get((y,x)) != True and upperTile[0] != -1:
                     self.renderedUpperTiles[(y,x)] = False
 
-    def addAnimatedLowerTilesRenderBoxes(self):
+
+    def addRenderBox_changedPanorama(self, panorama):
+        screenOffset = (self.cameraTile[0]*PRAM.TILESIZE + self.cameraOffset[0],
+                        self.cameraTile[1]*PRAM.TILESIZE + self.cameraOffset[1])
+
+        for vs in panorama.visibleSections:  # vs = (left edge, right edge, top edge, bottom edge)
+            # check if visible portion of background is on screen
+            if (vs[0] < screenOffset[0] + PRAM.DISPLAY_WIDTH
+                and vs[1] > screenOffset[0]
+                and vs[2] < screenOffset[1] + PRAM.DISPLAY_HEIGHT
+                and vs[3] > screenOffset[1]):
+
+                box = list(vs)
+
+                #trim the render box to the size of the screen
+                if box[LEFT_EDGE] < self.screenBoundryLeft():
+                    box[LEFT_EDGE] = self.screenBoundryLeft()
+                if box[RIGHT_EDGE] > self.screenBoundryRight():
+                    box[RIGHT_EDGE] = self.screenBoundryRight()
+                if box[TOP_EDGE] < self.screenBoundryTop():
+                    box[TOP_EDGE] = self.screenBoundryTop()
+                if box[BOTTOM_EDGE] > self.screenBoundryBottom():
+                    box[BOTTOM_EDGE] = self.screenBoundryBottom()
+
+                #adjusts box to be on border of tiles, so that we render the tile and box boundry the same
+                box[LEFT_EDGE] = box[LEFT_EDGE] - (box[LEFT_EDGE]%PRAM.TILESIZE)
+                box[RIGHT_EDGE] = box[RIGHT_EDGE] + (PRAM.TILESIZE - (box[RIGHT_EDGE]%PRAM.TILESIZE))
+                box[TOP_EDGE] = box[TOP_EDGE] - (box[TOP_EDGE]%PRAM.TILESIZE)
+                box[BOTTOM_EDGE] = box[BOTTOM_EDGE] + (PRAM.TILESIZE - (box[BOTTOM_EDGE]%PRAM.TILESIZE))
+
+                addedBoxes =self.addToRenderQueue(box)
+                for addedBox in addedBoxes: #Add changed tiles only for sections actually added to the queue
+                    self.addChangedTilesFromRenderBox(addedBox)
+
+    def addRenderBoxes_AnimatedLowerTiles(self):
         lowerTiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
         upperTiles = self.upperTileMap.tiles
         animatedDivide_px = self.lowerTileMap.animatedDivide_px
@@ -547,14 +496,15 @@ class Renderer:
                     if lowerTile[1] >= animatedDivide_px:
                         minx = (x + cameraTile[0])*PRAM.TILESIZE
                         maxx = minx+PRAM.TILESIZE
-                        self.renderQueue.append((minx, maxx, miny, maxy))  # for panorama rendering
+                        # self.renderQueue.append((minx, maxx, miny, maxy))  # for panorama rendering
+                        self.addToRenderQueue((minx, maxx, miny, maxy))
                         self.renderedLowerTiles[(tileOffset_y, tileOffset_x)] = False
                         upperTile = upperTiles[tileOffset_y][tileOffset_x]
                         if upperTile[0] != -1:
                             self.renderedUpperTiles[(tileOffset_y, tileOffset_x)] = False #If we re-render lower, must also do upper
 
 
-    def addAnimatedUpperTilesRenderBoxes(self):
+    def addRenderBoxes_AnimatedUpperTiles(self):
         lowerTiles = self.lowerTileMap.tiles #for efficiency, quick reference to ptr
         upperTiles = self.upperTileMap.tiles
         animatedDivide_px = self.upperTileMap.animatedDivide_px
@@ -571,12 +521,226 @@ class Renderer:
                     if upperTile[1] >= animatedDivide_px:
                         minx = (x + cameraTile[0])*PRAM.TILESIZE
                         maxx = minx+PRAM.TILESIZE
-                        self.renderQueue.append((minx, maxx, miny, maxy))  # for panorama rendering
+                        self.addToRenderQueue((minx, maxx, miny, maxy))
                         self.renderedUpperTiles[(tileOffset_y, tileOffset_x)] = False
                         lowerTile = lowerTiles[tileOffset_y][tileOffset_x]
                         if lowerTile[0] != -1:
                             self.renderedLowerTiles[(tileOffset_y, tileOffset_x)] = False #If we re-render upper, must also do lower
 
+    #Takes a candidate box, and adds it to the render Q, or a portion of it to the renderQ, if part of the box
+    #is already in the render @
+    def addToRenderQueue(self, candidateBox):
+        if len(self.renderQueue) == 0:
+            self.renderQueue.append(candidateBox)
+            return [candidateBox] #so we always return a list
+        else:
+            newBoxes = self.boxesToAdd(candidateBox)
+            self.renderQueue+=newBoxes
+            return newBoxes #return what was added for a reference to use on adding tiles or other affected assets
+
+    # Takes a candidateBox, and checks if it overlaps with a box already in the Q.
+    # If not, return the box.  If it overlaps, recursively call this funciton
+    # with the box split at the overlap points, returning any boxes that don't overlap a current box
+    # will return an [] if the box is covered completely by the current Q, or a list of boxes which cover new area
+    def boxesToAdd(self, candidateBox):
+        newBoxes= []
+        overlap = False
+        for currentBox in self.renderQueue:
+
+            #Check to see if we already include this section in the Q, if so return no boxes
+            if candidateBox[RIGHT_EDGE] <= currentBox[RIGHT_EDGE] \
+                    and candidateBox[LEFT_EDGE] >= currentBox[LEFT_EDGE] \
+                    and candidateBox[TOP_EDGE] >= currentBox[TOP_EDGE] \
+                    and candidateBox[BOTTOM_EDGE] <= currentBox[BOTTOM_EDGE]:
+                return [] #This box is already covered by one of the boxes in the queue
+
+            #see if the Y overlaps at all
+            if candidateBox[BOTTOM_EDGE] > currentBox[TOP_EDGE] and candidateBox[TOP_EDGE] < currentBox[BOTTOM_EDGE]:
+
+                # Overlaps on left side of current box
+                if candidateBox[RIGHT_EDGE] > currentBox[LEFT_EDGE] > candidateBox[LEFT_EDGE]:
+                    newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
+                                                  currentBox[LEFT_EDGE],
+                                                  candidateBox[TOP_EDGE],
+                                                  candidateBox[BOTTOM_EDGE]]) #left half
+
+                    newBoxes += self.boxesToAdd([currentBox[LEFT_EDGE],
+                                                  candidateBox[RIGHT_EDGE],
+                                                  candidateBox[TOP_EDGE],
+                                                  candidateBox[BOTTOM_EDGE]]) #right half
+
+
+                    overlap = True #if there is overlap, we know we don't return the original box
+                    break
+
+                # Overlaps on right side of current box
+                elif candidateBox[LEFT_EDGE] < currentBox[RIGHT_EDGE] < candidateBox[RIGHT_EDGE]:
+                    newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
+                                                 currentBox[RIGHT_EDGE],
+                                                 candidateBox[TOP_EDGE],
+                                                 candidateBox[BOTTOM_EDGE]]) #left half
+
+                    newBoxes += self.boxesToAdd([currentBox[RIGHT_EDGE],
+                                                 candidateBox[RIGHT_EDGE],
+                                                 candidateBox[TOP_EDGE],
+                                                 candidateBox[BOTTOM_EDGE]]) #right half
+
+                    overlap = True  # if there is overlap, we know we don't return the original box
+                    break
+
+                # Check if the candidate X is within the middle of the current, overlapping at top or bottom
+                elif candidateBox[LEFT_EDGE] < currentBox[RIGHT_EDGE] and candidateBox[RIGHT_EDGE] > currentBox[LEFT_EDGE]:
+                    # Overlaps on top side of current box
+                    if candidateBox[TOP_EDGE] < currentBox[TOP_EDGE] < candidateBox[BOTTOM_EDGE]:
+                        newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
+                                                     candidateBox[RIGHT_EDGE],
+                                                     candidateBox[TOP_EDGE],
+                                                     currentBox[TOP_EDGE]]) #top half
+
+                        newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
+                                                     candidateBox[RIGHT_EDGE],
+                                                     currentBox[TOP_EDGE],
+                                                     candidateBox[BOTTOM_EDGE]]) #bottom half
+
+                        overlap = True  # if there is overlap, we know we don't return the original box
+                        break
+
+                    # Overlaps on bottom side of current box
+                    elif candidateBox[BOTTOM_EDGE] > currentBox[BOTTOM_EDGE] > candidateBox[TOP_EDGE]:
+                        newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
+                                                     candidateBox[RIGHT_EDGE],
+                                                     candidateBox[TOP_EDGE],
+                                                     currentBox[BOTTOM_EDGE]]) #top half
+
+                        newBoxes += self.boxesToAdd([candidateBox[LEFT_EDGE],
+                                                     candidateBox[RIGHT_EDGE],
+                                                     currentBox[BOTTOM_EDGE],
+                                                     candidateBox[BOTTOM_EDGE]]) #bottom half
+
+                        overlap = True  # if there is overlap, we know we don't return the original box
+                        break
+
+        if overlap: #we split the candidate box up
+            return newBoxes
+        else:
+            return [candidateBox] #there is no overlap with this box and any in the current render Q
+
+    #given absolute box coords, trim to the boundries of the visible screen
+    def trimBoxToScreen(self, box):
+        trimmedBox = list(box)
+        if box[LEFT_EDGE] < self.screenBoundryLeft():
+            trimmedBox[LEFT_EDGE] = self.screenBoundryLeft()
+        if box[RIGHT_EDGE] > self.screenBoundryRight():
+            trimmedBox[RIGHT_EDGE] = self.screenBoundryRight()
+        if box[TOP_EDGE] < self.screenBoundryTop():
+            trimmedBox[TOP_EDGE] = self.screenBoundryTop()
+        if box[BOTTOM_EDGE] > self.screenBoundryBottom():
+            trimmedBox[BOTTOM_EDGE] = self.screenBoundryBottom()
+
+        return trimmedBox
+
+    #given 2boxes [left,right,top,bottom], return a box where they overlap, or an [] if no overlap
+    def getBoxOverlap(self, box1, box2):
+        # Check to see if any overlap at all
+        if self.isBoxOverlap(box1, box2):
+            overlap = [0, 0, 0, 0]
+
+            if box1[LEFT_EDGE] > box2[LEFT_EDGE]:
+                overlap[LEFT_EDGE] = box1[LEFT_EDGE]
+            else:
+                overlap[LEFT_EDGE] = box2[LEFT_EDGE]
+
+            if box1[RIGHT_EDGE] < box2[RIGHT_EDGE]:
+                overlap[RIGHT_EDGE] = box1[RIGHT_EDGE]
+            else:
+                overlap[RIGHT_EDGE] = box2[RIGHT_EDGE]
+
+            if box1[TOP_EDGE] > box2[TOP_EDGE]:
+                overlap[TOP_EDGE] = box1[TOP_EDGE]
+            else:
+                overlap[TOP_EDGE] = box2[TOP_EDGE]
+
+            if box1[BOTTOM_EDGE] < box2[BOTTOM_EDGE]:
+                overlap[BOTTOM_EDGE] = box1[BOTTOM_EDGE]
+            else:
+                overlap[BOTTOM_EDGE] = box2[BOTTOM_EDGE]
+
+            return overlap
+
+        else:
+            return [] #no overlap
+
+    #given a box of absolute coordinates, check if it is on the display surface
+    def isBoxOnScreen(self,box):
+        if box[LEFT_EDGE] < self.screenBoundryRight() and \
+                        box[RIGHT_EDGE] > self.screenBoundryLeft() and \
+                        box[TOP_EDGE] < self.screenBoundryBottom() and \
+                        box[BOTTOM_EDGE] > self.screenBoundryTop():
+            return True
+        return False
+
+    #return true if there is any overlap between two boxes
+    def isBoxOverlap(self, box1, box2):
+        if box1[LEFT_EDGE] < box2[RIGHT_EDGE] and \
+                        box1[RIGHT_EDGE] > box2[LEFT_EDGE] and \
+                        box1[TOP_EDGE] < box2[BOTTOM_EDGE] and \
+                        box1[BOTTOM_EDGE] > box2[TOP_EDGE]:
+            return True
+        return False
+
+    def screenBoundryLeft(self):
+        return (self.cameraTile[0]*PRAM.TILESIZE) + self.cameraOffset[0]
+
+    def screenBoundryRight(self):
+        return (self.cameraTile[0] * PRAM.TILESIZE) + self.cameraOffset[0] + PRAM.DISPLAY_WIDTH
+
+    def screenBoundryTop(self):
+        return (self.cameraTile[1]*PRAM.TILESIZE) + self.cameraOffset[1]
+
+    def screenBoundryBottom(self):
+        return (self.cameraTile[1] * PRAM.TILESIZE) + self.cameraOffset[1] + PRAM.DISPLAY_HEIGHT
+
+    def loadAssets(self, levelData):
+        self.framecount = 0 #reset framecount
+        self.levelData = levelData #TODO may not need this reference
+        self.lowerTileMap = levelData.lowerTileMap
+        self.upperTileMap = levelData.upperTileMap
+        self.backgrounds = levelData.backgrounds
+        self.foregrounds = levelData.foregrounds
+        self.actors = levelData.actors
+
+        #TODO setup data structure for actors
+        self.actorDict = {} #Load actor images
+        # for actor in self.actors:
+        #     if type(actor) is StaticSprite: #TODO this will be type Sprite or similar
+        #         if self.actorDict.get(actor.image) == None:
+        #             self.actorDict[actor.image] = pygame.image.load(actor.path+actor.image).convert_alpha()
+
+        self.animatedPanorama = False #if this is true, must always re-render entire screen every frame
+
+        for background in self.backgrounds:
+            if background.isAnimated:
+                self.animatedPanorama = True
+                background.image = loadAnimatedPanoramas(background)
+            else:
+                background.image = loadPanorama(background)
+            if background.isMotion_X:
+                self.animatedPanorama = True
+            if background.isMotion_Y:
+                self.animatedPanorama = True
+
+        for foreground in self.foregrounds:
+            if foreground.isAnimated:
+                self.animatedPanorama = True
+                foreground.image = loadAnimatedPanoramas(foreground)
+            else:
+                foreground.image = loadPanorama(foreground)
+            if foreground.isMotion_X:
+                self.animatedPanorama = True
+            if foreground.isMotion_Y:
+                self.animatedPanorama = True
+
+        self.loadTileMapImages()
 
     def loadTileMapImages(self):
         if self.lowerTileMap.alpha:
@@ -588,6 +752,46 @@ class Renderer:
             self.upperTileMap.image = pygame.image.load(self.upperTileMap.filePath).convert_alpha()
         else:
             self.upperTileMap.image = pygame.image.load(self.upperTileMap.filePath).convert()
+
+    def debug_drawRenderQ(self):
+        HOWTHICK = 1
+
+        for renderBox in self.renderQueue:
+            renderBox = [renderBox[0] - self.screenBoundryLeft(),
+                         renderBox[1] - self.screenBoundryLeft(),
+                         renderBox[2] - self.screenBoundryTop(),
+                         renderBox[3] - self.screenBoundryTop()]
+
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[LEFT_EDGE], renderBox[TOP_EDGE]),
+                             (renderBox[RIGHT_EDGE], renderBox[TOP_EDGE]),
+                             HOWTHICK)
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[LEFT_EDGE], renderBox[TOP_EDGE]),
+                             (renderBox[LEFT_EDGE], renderBox[BOTTOM_EDGE]),
+                             HOWTHICK)
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[RIGHT_EDGE], renderBox[TOP_EDGE]),
+                             (renderBox[RIGHT_EDGE], renderBox[BOTTOM_EDGE]),
+                             HOWTHICK)
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[LEFT_EDGE], renderBox[BOTTOM_EDGE]),
+                             (renderBox[RIGHT_EDGE], renderBox[BOTTOM_EDGE]),
+                             HOWTHICK)
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[LEFT_EDGE], renderBox[TOP_EDGE]),
+                             (renderBox[RIGHT_EDGE], renderBox[BOTTOM_EDGE]),
+                             HOWTHICK)
+            pygame.draw.line(self.screen,
+                             PRAM.COLOR_BLACK,
+                             (renderBox[RIGHT_EDGE], renderBox[TOP_EDGE]),
+                             (renderBox[LEFT_EDGE], renderBox[BOTTOM_EDGE]),
+                             HOWTHICK)
 
 #use pygame image.load, convert alpha if necessary, return the image file
 def loadPanorama(panorama):
