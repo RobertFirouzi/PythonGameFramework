@@ -2,7 +2,10 @@ PROJECT CharmQuark
 Can re-write render using pyopengl? - seems prudent.  Can learn open gl separately (in C++?) then work on porting to the game
 	pygame can still be used for input processing etc
 
-merge the renderAnimatedChanges back to master, create a new branch for animated sprites
+Graphics:
+	need to inteligently laod assets: main char stuff loaded all the time, but load assets for levels particular 	to that area
+	thread(s) to load assets?:  Seperate thread that runs in background loading assets as needed (approaching 	the start of a new area, new character loaded, new effects, etc)
+
 update changed actors algorithm to re-render them if on a changed tile
 Sprites for actors
 Animate actors
