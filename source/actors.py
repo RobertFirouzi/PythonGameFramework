@@ -9,11 +9,13 @@ import parameters as PRAM
 #BASIC PLACEHOLDER CLASSES UNTIL ANIMATION CLASSES ARE IMPLEMENTED
 
 class ActorBase:
-    def __init__(self, size, position, direction = 'right', isFocus = False):
+    def __init__(self, size, position, direction = 'right', isFocus = False, characterSprite = None):
         self.size = size
         self.position = position
         self.direction = direction
-        self.isFocus = isFocus
+        self.isFocus = isFocus #if camera follows them
+
+        self.characterSprite = characterSprite
         self.changed = True #render if true, change to false after rendered
     
     def setPosition(self, position = (0,0)):
@@ -45,30 +47,31 @@ class SimpleBox(ActorBase):
 
 #Contains all of the animations for a character sprite
 class CharacterSprite:
-    def __init__(self, name, animations):
+    def __init__(self, name, spriteAnimations, animationState = None):
         self.name = name
-        self.animations = animations #all data needed to display the image
+        self.spriteAnimations = spriteAnimations #all data needed to display the image
 
-        self.animationState = None #tracks which image and frame to display, as well as when to flip
+        self.animationState = animationState #tracks which image and frame to display, as well as when to flip
 
 #class to main the current state of a character sprites animation
 class AnimationState:
-    def __init__(self):
-        self.name = '' #reference to animation, eg: 'hero_walk', 'hero_attack1', etc
-        self.direction = 0 #reference to which direction of animation is being played
-        self.condition = 0  # 0 - Frozen, 1 - Forward, 2 - Backward, etc
-        self.frameIndex = 0 #tracks which frame in the sequence is being displayed
-        self.frameCount = 0 #number of frames since last image frame index transistion
-        self.speed = 100  #percent of default framerate the image is moving
+    def __init__(self, name = '', direction = 0, condition = 0, frameIndex = 0, frameCount = 0, speed = 100):
+        self.name = name #reference to animation, eg: 'hero_walk', 'hero_attack1', etc
+        self.direction = direction #reference to which direction of animation is being played
+        self.condition = condition  # 0 - Frozen, 1 - Forward, 2 - Backward, etc
+        self.frameIndex = frameIndex #tracks which frame in the sequence is being displayed
+        self.frameCount = frameCount #number of frames since last image frame index transistion
+        self.speed = speed  #percent of default framerate the image is moving
 
 #Contains the base image and positional data for a sprite animation (all directions)
 class SpriteAnimation:
-    def __init__(self, filePath, name, numbFrames, fps, positions):
+    def __init__(self, filePath, name, numbFrames, fps, positions_px, animationAccessories):
         self.filePath = filePath
         self.name = name
         self.numbFrames = numbFrames
         self.fps = fps
-        self.positions = positions #Dictionary of AnimationPositions {Direction: position()}
+        self.positions_px = positions_px #Dictionary of AnimationPositions {Direction: position()}
+        self.animationAccessories = animationAccessories #list of accessories, which are layered ontop of the base image
 
         self.image = None #Image of the base animation, may have accessories layered on top
 
@@ -78,7 +81,7 @@ class AnimationAccessory:
         self.filePath = filePath
         self.baseName = baseName #which Sprite_Animation this corresponds to
         self.name = name
-        self.positions = positions #Dictionary of AccessoryPositions {Direction: position()}
+        self.positions_px = positions #Dictionary of AccessoryPositions {Direction: position()}
 
         self.image = None #loaded from DB, used to blit ontop of a Base Animation
 

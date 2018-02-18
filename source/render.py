@@ -1,4 +1,4 @@
-from actors import SimpleBox
+from actors import SimpleBox, CharacterSprite, AnimationAccessory, AnimationPosition, AnimationState, SpriteAnimation, AccessoryPosition
 import pygame
 import parameters as PRAM
 
@@ -29,8 +29,7 @@ class Renderer:
         #indexed by their (x,y) coordinate pair
         self.renderedLowerTiles = {} 
         self.renderedUpperTiles = {} 
-        
-        self.actorsDict = {} #reference to image files
+
         self.lowerTileMap = None # Object holds tile mapping and image data
         self.upperTileMap = None # Object holds tile mapping and image data
         self.animatedPanorama = False
@@ -125,6 +124,9 @@ class Renderer:
                     addRenderBox = True
             if addRenderBox and not self.isRenderAll:
                 self.addRenderBox_changedPanorama(fg)
+
+        for actor in self.actors:
+            pass #TODO - update the animation states of actors on screen
 
     def renderAllTiles(self, lower = True):
         if lower:
@@ -357,13 +359,23 @@ class Renderer:
 #     def renderAllActors(self, actorsWrapper):
     def renderAllActors(self):
         for actor in self.actors:
-            if type(actor) is SimpleBox:
+            if type(actor) is SimpleBox and False: #TODO - debug, turning off to test sprite render
                 pygame.draw.rect(self.screen, actor.color, 
                                  pygame.Rect(actor.position[0]+PRAM.BOX_FUDGE - self.cameraPosition[0], 
                                              actor.position[1] - self.cameraPosition[1], 
                                              actor.size[0] - PRAM.BOX_FUDGE*2, 
                                              actor.size[1]))
             actor.changed = False
+        else:
+            image = actor.characterSprite.spriteAnimations[0].image #TODO, hardcoded, load the actual frame
+            position = actor.characterSprite.spriteAnimations[0].positions_px[0][0] #get the 'Left', 1 images
+            self.screen.blit(image,
+                             (actor.position[0]+PRAM.BOX_FUDGE - self.cameraPosition[0],
+                              actor.position[1] - self.cameraPosition[1]),  # screen position
+                             (position.start_x,  # tileMap x crop position
+                              position.start_y,  # tileMap y crop position
+                              position.width,  # tilemap  width
+                              position.height))  # tilemap height
         return
     
     #TODO 
@@ -707,18 +719,42 @@ class Renderer:
         self.upperTileMap = levelData.upperTileMap
         self.backgrounds = levelData.backgrounds
         self.foregrounds = levelData.foregrounds
-        self.actors = levelData.actors
+        self.actors = levelData.actors # TODO - update the db schema
 
-        #TODO setup data structure for actors
-        self.actorDict = {} #Load actor images
-        # for actor in self.actors:
-        #     if type(actor) is StaticSprite: #TODO this will be type Sprite or similar
-        #         if self.actorDict.get(actor.image) == None:
-        #             self.actorDict[actor.image] = pygame.image.load(actor.path+actor.image).convert_alpha()
+        #TODO temporary hardcoded load to test sprite animation
+        #Start with a single frame
+        heroFilepath = 'C:\\Users\\Robert\\Repos\\PythonGameFramework\\source\\dir_image\\dir_sprites\\hero\\hero_walk.png'
+        walkLeftPosition = AnimationPosition(0,0,30,48) #x, y ,width, height
+        walkAnimation = SpriteAnimation(heroFilepath, 'Walk', 1, 1, {0:[walkLeftPosition]}, []) #no accessory for now
+        animationState = AnimationState('Walk', 0, 1, 0, 0, 100)
+        characterSprite = CharacterSprite('Hero', [walkAnimation], animationState)
+
+        self.actors[0].characterSprite = characterSprite
+
+        for actor in self.actors: #TODO - this will need to be it's own method, for easy ability to reload sprites
+            for animation in actor.characterSprite.spriteAnimations:
+                baseImage = pygame.image.load(animation.filePath).convert_alpha()
+                for accessory in animation.animationAccessories:
+                    accessoryImage = pygame.image.load(accessory.filePath).convert_alpha()
+                    for direction, positions in accessory.positions_px.items():
+                        index = 0 #keep track of which frame we are on
+                        for position in positions: #superimpose the accesory onto the base, frame by frame
+                            baseImage.blit(accessoryImage, # where to copy to on the base image
+                                             (accessory.positions_px[direction][index].start_x + position.relative_x,
+                                              accessory.positions_px[direction][index].start_y + position.relative_y),
+                                             (position.start_x,  # where to to start on the accessory map
+                                              position.start_y,  #
+                                              position.width,  # tilemap  width
+                                              position.height))  # tilemap height
+                            index +=1
+                animation.image = baseImage #this is the completed image with accesories loaded
+
+
+
 
         self.animatedPanorama = False #if this is true, must always re-render entire screen every frame
 
-        for background in self.backgrounds:
+        for background in self.backgrounds: #TODO - this will need to be it's own method, for easy ability to reload sprites
             if background.isAnimated:
                 self.animatedPanorama = True
                 background.image = loadAnimatedPanoramas(background)
@@ -729,7 +765,7 @@ class Renderer:
             if background.isMotion_Y:
                 self.animatedPanorama = True
 
-        for foreground in self.foregrounds:
+        for foreground in self.foregrounds: #TODO - this will need to be it's own method, for easy ability to reload sprites
             if foreground.isAnimated:
                 self.animatedPanorama = True
                 foreground.image = loadAnimatedPanoramas(foreground)
