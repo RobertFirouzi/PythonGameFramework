@@ -9,6 +9,11 @@ Graphics:
 update changed actors algorithm to re-render them if on a changed tile
 Sprites for actors
 Animate actors
+	can probably put the AnimationState, and list of SpriteAnimations together under a wrapper class
+		"SpriteAnimationsSuite"?
+			SpriteAnimations[]			
+			CurrentAnimation*
+			AnimationState
 
 Instead of re-render entire screen on a camera move, can we shift the entire screen and re-render the shifted off part?
 
@@ -54,6 +59,7 @@ should gameCamera just be in renderer?
 	cleanup camera references
 
 SOFTWARE DESIGN
+create a base animated class - things like fps,framesPerImage, update animated index, etc are common
 use packages to organize modules?
 Write down algorithm for rendering scenery somewhere!
 In Panorama render: Var Names - need better names for each variable.  Can some of the calculations be optimized?  

@@ -8,6 +8,15 @@ RIGHT_EDGE = 1
 TOP_EDGE = 2
 BOTTOM_EDGE = 3
 
+LEFT_ANIM = 0
+RIGHT_ANIM = 1
+DOWN_ANIM = 2
+UP_ANIM = 3
+
+FROZE_ANIM = 0
+FORWARD_ANIM = 1
+REVERSE_ANIM = 2
+
 #renderMethods list populated by game depending on the needs of the currently loaded level/menu
 class Renderer:
     def __init__(self, screen):
@@ -74,7 +83,7 @@ class Renderer:
         self.framecount+=1
 
     #updates the index of any animated images
-    def updateAnimatedIndex(self):
+    def updateAnimatedIndex(self): #TODO - move some of this logic into the classes (eg updating framecount)
         if self.lowerTileMap.isAnimated:
             if int(self.framecount % self.lowerTileMap.framesPerImage) == 0:  # time to change the pic
                 self.lowerTileMap.updateFrameIndex()
@@ -125,8 +134,8 @@ class Renderer:
             if addRenderBox and not self.isRenderAll:
                 self.addRenderBox_changedPanorama(fg)
 
-        for actor in self.actors:
-            pass #TODO - update the animation states of actors on screen
+        for actor in self.actors: #TODO - check if onscreen?
+            actor.characterSprite.updateAnimatedIndex() #better pattern to avoid violating demeter, etc?
 
     def renderAllTiles(self, lower = True):
         if lower:
@@ -365,17 +374,19 @@ class Renderer:
                                              actor.position[1] - self.cameraPosition[1], 
                                              actor.size[0] - PRAM.BOX_FUDGE*2, 
                                              actor.size[1]))
+
+            else:
+                image = actor.characterSprite.spriteAnimations[0].image #TODO, hardcoded, load the actual animation
+                frame = actor.characterSprite.animationState.frameIndex
+                position = actor.characterSprite.spriteAnimations[0].positions_px[actor.direction][frame] #get the 'Left', 1 images
+                self.screen.blit(image,
+                                 (actor.position[0]+PRAM.BOX_FUDGE - self.cameraPosition[0],
+                                  actor.position[1] - self.cameraPosition[1]),  # screen position
+                                 (position.start_x,  # tileMap x crop position
+                                  position.start_y,  # tileMap y crop position
+                                  position.width,  # tilemap  width
+                                  position.height))  # tilemap height
             actor.changed = False
-        else:
-            image = actor.characterSprite.spriteAnimations[0].image #TODO, hardcoded, load the actual frame
-            position = actor.characterSprite.spriteAnimations[0].positions_px[0][0] #get the 'Left', 1 images
-            self.screen.blit(image,
-                             (actor.position[0]+PRAM.BOX_FUDGE - self.cameraPosition[0],
-                              actor.position[1] - self.cameraPosition[1]),  # screen position
-                             (position.start_x,  # tileMap x crop position
-                              position.start_y,  # tileMap y crop position
-                              position.width,  # tilemap  width
-                              position.height))  # tilemap height
         return
     
     #TODO 
@@ -383,12 +394,23 @@ class Renderer:
     def renderChangedActors(self):
         for actor in self.actors:
             if actor.changed:
-                if type(actor) is SimpleBox:
+                if type(actor) is SimpleBox and False: #TODO - debug, turning off to test sprite render
                     pygame.draw.rect(self.screen, actor.color, 
                                      pygame.Rect(actor.position[0]+PRAM.BOX_FUDGE - self.cameraPosition[0], 
                                                  actor.position[1] - self.cameraPosition[1], 
                                                  actor.size[0] - PRAM.BOX_FUDGE*2, 
                                                  actor.size[1]))
+                else:
+                    image = actor.characterSprite.spriteAnimations[0].image  # TODO, hardcoded, load the actual animation
+                    frame = actor.characterSprite.animationState.frameIndex
+                    position = actor.characterSprite.spriteAnimations[0].positions_px[actor.direction][frame]  # get the 'Left', 1 images
+                    self.screen.blit(image,
+                                     (actor.position[0] + PRAM.BOX_FUDGE - self.cameraPosition[0],
+                                      actor.position[1] - self.cameraPosition[1]),  # screen position
+                                     (position.start_x,  # tileMap x crop position
+                                      position.start_y,  # tileMap y crop position
+                                      position.width,  # tilemap  width
+                                      position.height))  # tilemap height
                 actor.changed = False
         return
 
@@ -723,10 +745,45 @@ class Renderer:
 
         #TODO temporary hardcoded load to test sprite animation
         #Start with a single frame
-        heroFilepath = 'C:\\Users\\Robert\\Repos\\PythonGameFramework\\source\\dir_image\\dir_sprites\\hero\\hero_walk.png'
-        walkLeftPosition = AnimationPosition(0,0,30,48) #x, y ,width, height
-        walkAnimation = SpriteAnimation(heroFilepath, 'Walk', 1, 1, {0:[walkLeftPosition]}, []) #no accessory for now
-        animationState = AnimationState('Walk', 0, 1, 0, 0, 100)
+        heroFilepath = 'C:\\Users\\Robert\\Repos\\PythonGameFramework\\source\\dir_image\\dir_sprites\\hero\\hero_walk_enlarge.png'
+
+        walkLeftPosition_0 = AnimationPosition(0,96,48,96) #x, y ,width, height
+        walkLeftPosition_1 = AnimationPosition(48,96,48,96) #x, y ,width, height
+        walkLeftPosition_2 = AnimationPosition(96,96,48,96) #x, y ,width, height
+        walkLeftPosition_3 = AnimationPosition(144,96,48,96) #x, y ,width, height
+
+        walkRightPosition_0 = AnimationPosition(0,192,48,96) #x, y ,width, height
+        walkRightPosition_1 = AnimationPosition(48,192,48,96) #x, y ,width, height
+        walkRightPosition_2 = AnimationPosition(96,192,48,96) #x, y ,width, height
+        walkRightPosition_3 = AnimationPosition(144,192,48,96) #x, y ,width, height
+
+        walkUpPosition_0 = AnimationPosition(0,288,48,96) #x, y ,width, height
+        walkUpPosition_1 = AnimationPosition(48,288,48,96) #x, y ,width, height
+        walkUpPosition_2 = AnimationPosition(96,288,48,96) #x, y ,width, height
+        walkUpPosition_3 = AnimationPosition(144,288,48,96) #x, y ,width, height
+
+        walkDownPosition_0 = AnimationPosition(0,0,48,96) #x, y ,width, height
+        walkDownPosition_1 = AnimationPosition(48,0,48,96) #x, y ,width, height
+        walkDownPosition_2 = AnimationPosition(96,0,48,96) #x, y ,width, height
+        walkDownPosition_3 = AnimationPosition(144,0,48,96) #x, y ,width, height
+
+        walkAnimation = SpriteAnimation(heroFilepath,
+                                        'Walk', #name
+                                        4, #frames
+                                        7, #fps
+                                        {LEFT_ANIM:[walkLeftPosition_0, walkLeftPosition_1, walkLeftPosition_2, walkLeftPosition_3],
+                                         RIGHT_ANIM: [walkRightPosition_0, walkRightPosition_1, walkRightPosition_2, walkRightPosition_3],
+                                         UP_ANIM: [walkUpPosition_0, walkUpPosition_1, walkUpPosition_2, walkUpPosition_3],
+                                         DOWN_ANIM: [walkDownPosition_0, walkDownPosition_1, walkDownPosition_2, walkDownPosition_3]},
+                                        []) #no accessory for now
+
+        animationState = AnimationState(walkAnimation, #the current animation state
+                                        LEFT_ANIM, #direction
+                                        FORWARD_ANIM, #Animation Condition
+                                        0, #frame index
+                                        0, #frameCount
+                                        100) #speed %
+
         characterSprite = CharacterSprite('Hero', [walkAnimation], animationState)
 
         self.actors[0].characterSprite = characterSprite

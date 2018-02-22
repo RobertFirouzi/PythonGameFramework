@@ -5,11 +5,20 @@ Created on Feb 24, 2017
 '''
 
 import parameters as PRAM
+LEFT_ANIM = 0
+RIGHT_ANIM = 1
+DOWN_ANIM = 2
+UP_ANIM = 3
+
+FROZE_ANIM = 0
+FORWARD_ANIM = 1
+REVERSE_ANIM = 2
+
 
 #BASIC PLACEHOLDER CLASSES UNTIL ANIMATION CLASSES ARE IMPLEMENTED
 
 class ActorBase:
-    def __init__(self, size, position, direction = 'right', isFocus = False, characterSprite = None):
+    def __init__(self, size, position, direction = PRAM.LEFT, isFocus = False, characterSprite = None):
         self.size = size
         self.position = position
         self.direction = direction
@@ -23,6 +32,7 @@ class ActorBase:
     
     def getPosition(self):
         return self.position
+
 
 class SimpleBox(ActorBase):
     def __init__(self, 
@@ -50,18 +60,30 @@ class CharacterSprite:
     def __init__(self, name, spriteAnimations, animationState = None):
         self.name = name
         self.spriteAnimations = spriteAnimations #all data needed to display the image
-
         self.animationState = animationState #tracks which image and frame to display, as well as when to flip
+
+    def updateAnimatedIndex(self):
+        self.animationState.updateAnimatedIndex()
 
 #class to main the current state of a character sprites animation
 class AnimationState:
-    def __init__(self, name = '', direction = 0, condition = 0, frameIndex = 0, frameCount = 0, speed = 100):
-        self.name = name #reference to animation, eg: 'hero_walk', 'hero_attack1', etc
+    def __init__(self, currentAnimation = '', direction = 0, condition = 0, frameIndex = 0, frameCount = 0, speed = 100):
+        self.currentAnimation = currentAnimation #reference to current animation playing
         self.direction = direction #reference to which direction of animation is being played
         self.condition = condition  # 0 - Frozen, 1 - Forward, 2 - Backward, etc
         self.frameIndex = frameIndex #tracks which frame in the sequence is being displayed
         self.frameCount = frameCount #number of frames since last image frame index transistion
         self.speed = speed  #percent of default framerate the image is moving
+
+    def updateAnimatedIndex(self):
+        if self.condition != FROZE_ANIM:
+            self.frameCount +=1
+            if self.frameCount >= self.currentAnimation.framesPerImage:
+                self.updateFrameIndex()
+                self.frameCount=0
+
+    def updateFrameIndex(self):
+        self.frameIndex = (self.frameIndex + 1) % self.currentAnimation.numbFrames
 
 #Contains the base image and positional data for a sprite animation (all directions)
 class SpriteAnimation:
@@ -74,6 +96,7 @@ class SpriteAnimation:
         self.animationAccessories = animationAccessories #list of accessories, which are layered ontop of the base image
 
         self.image = None #Image of the base animation, may have accessories layered on top
+        self.framesPerImage = round(PRAM.GAME_FPS/fps,2)
 
 #contains animation for an accessory to a Sprite_Animation, which is layered on top
 class AnimationAccessory:

@@ -46,10 +46,10 @@ INPTYPE_NORMAL = 'normal'
 TRIG_TOUCH = 'touch'
 TRIG_ACTION = 'action'
 
-UP = 0
-DOWN = 1
-LEFT = 2
-RIGHT = 3
+UP = 3
+DOWN = 2
+LEFT = 0
+RIGHT = 1
 
 ### EVENT TYPES ###
 KEYDOWN = 2
