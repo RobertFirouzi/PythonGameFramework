@@ -119,7 +119,7 @@ class AnimationPosition:
 #container class of positional information and size of a single frame of an animation accessory
 #needs the relative position on the corresponding base frame as well as position of self on frame
 class AccessoryPosition:
-    def __init__(self, start_x, start_y, width, height, relative_x, relative_y):
+    def __init__(self, start_x, start_y, width, height, relative_x = 0, relative_y= 0):
         self.start_x = start_x
         self.start_y = start_y
         self.width = width

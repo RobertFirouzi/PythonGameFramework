@@ -745,6 +745,79 @@ class Renderer:
 
         #TODO temporary hardcoded load to test sprite animation
         #Start with a single frame
+        acc1_head_filepath = 'C:\\Users\\Robert\\Repos\\PythonGameFramework\\source\\dir_image\\dir_sprites\\hero\\hero_acc1_head.png'
+
+        walkLeftHeadPosition_0 = AccessoryPosition(0,96,48,96) #x, y ,width, height, relative_x, relative_y
+        walkLeftHeadPosition_1 = AccessoryPosition(48,96,48,96) #x, y ,width, height, relative_x, relative_y
+        walkLeftHeadPosition_2 = AccessoryPosition(96,96,48,96) #x, y ,width, height, relative_x, relative_y
+        walkLeftHeadPosition_3 = AccessoryPosition(144,96,48,96) #x, y ,width, height, relative_x, relative_y
+
+        walkRightHeadPosition_0 = AccessoryPosition(0,192,48,96) #x, y ,width, height, relative_x, relative_y
+        walkRightHeadPosition_1 = AccessoryPosition(48,192,48,96) #x, y ,width, height, relative_x, relative_y
+        walkRightHeadPosition_2 = AccessoryPosition(96,192,48,96) #x, y ,width, height, relative_x, relative_y
+        walkRightHeadPosition_3 = AccessoryPosition(144,192,48,96) #x, y ,width, height, relative_x, relative_y
+
+        walkUpHeadPosition_0 = AccessoryPosition(0,288,48,96) #x, y ,width, height, relative_x, relative_y
+        walkUpHeadPosition_1 = AccessoryPosition(48,288,48,96) #x, y ,width, height, relative_x, relative_y
+        walkUpHeadPosition_2 = AccessoryPosition(96,288,48,96) #x, y ,width, height, relative_x, relative_y
+        walkUpHeadPosition_3 = AccessoryPosition(144,288,48,96) #x, y ,width, height, relative_x, relative_y
+
+        walkDownHeadPosition_0 = AccessoryPosition(0,0,48,96) #x, y ,width, height, relative_x, relative_y
+        walkDownHeadPosition_1 = AccessoryPosition(48,0,48,96) #x, y ,width, height, relative_x, relative_y
+        walkDownHeadPosition_2 = AccessoryPosition(96,0,48,96) #x, y ,width, height, relative_x, relative_y
+        walkDownHeadPosition_3 = AccessoryPosition(144,0,48,96) #x, y ,width, height, relative_x, relative_y
+
+        headAccessory = AnimationAccessory(acc1_head_filepath,
+                                           'Walk',
+                                           'Walk_Helmet1',
+                                           {LEFT_ANIM:[walkLeftHeadPosition_0, walkLeftHeadPosition_1, walkLeftHeadPosition_2, walkLeftHeadPosition_3],
+                                            RIGHT_ANIM: [walkRightHeadPosition_0, walkRightHeadPosition_1, walkRightHeadPosition_2, walkRightHeadPosition_3],
+                                            UP_ANIM: [walkUpHeadPosition_0, walkUpHeadPosition_1, walkUpHeadPosition_2, walkUpHeadPosition_3],
+                                            DOWN_ANIM: [walkDownHeadPosition_0, walkDownHeadPosition_1, walkDownHeadPosition_2, walkDownHeadPosition_3]})
+
+        acc2_feet_filepath = 'C:\\Users\\Robert\\Repos\\PythonGameFramework\\source\\dir_image\\dir_sprites\\hero\\hero_acc2_feet.png'
+        feetAccessory = AnimationAccessory(acc2_feet_filepath,
+                                           'Walk',
+                                           'Walk_Feet1',
+                                           {LEFT_ANIM:[walkLeftHeadPosition_0, walkLeftHeadPosition_1, walkLeftHeadPosition_2, walkLeftHeadPosition_3],
+                                            RIGHT_ANIM: [walkRightHeadPosition_0, walkRightHeadPosition_1, walkRightHeadPosition_2, walkRightHeadPosition_3],
+                                            UP_ANIM: [walkUpHeadPosition_0, walkUpHeadPosition_1, walkUpHeadPosition_2, walkUpHeadPosition_3],
+                                            DOWN_ANIM: [walkDownHeadPosition_0, walkDownHeadPosition_1, walkDownHeadPosition_2, walkDownHeadPosition_3]})
+
+
+
+        walkDownBodyPosition_0 = AccessoryPosition(0,0,35,51, 6, 38) #x, y ,width, height, relative_x, relative_y
+        walkDownBodyPosition_1 = AccessoryPosition(41,0,32,52, 6, 38) #x, y ,width, height, relative_x, relative_y
+        walkDownBodyPosition_2 = AccessoryPosition(80,0,35,51, 6, 38) #x, y ,width, height, relative_x, relative_y
+        walkDownBodyPosition_3 = AccessoryPosition(120,0,32,51, 6, 38) #x, y ,width, height, relative_x, relative_y
+
+        walkLeftBodyPosition_0 = AccessoryPosition(0,52,35,51, 6, 38) #x, y ,width, height, relative_x, relative_y
+        walkLeftBodyPosition_1 = AccessoryPosition(41,52,32,52, 6, 38) #x, y ,width, height, relative_x, relative_y
+        walkLeftBodyPosition_2 = AccessoryPosition(80,52,35,51, 6, 38) #x, y ,width, height, relative_x, relative_y
+        walkLeftBodyPosition_3 = AccessoryPosition(120,52,32,51, 6, 38) #x, y ,width, height, relative_x, relative_y
+
+        walkRightBodyPosition_0 = AccessoryPosition(0,106,35,51, 6, 38) #x, y ,width, height, relative_x, relative_y
+        walkRightBodyPosition_1 = AccessoryPosition(41,106,32,52, 6, 38) #x, y ,width, height, relative_x, relative_y
+        walkRightBodyPosition_2 = AccessoryPosition(80,106,35,51, 6, 38) #x, y ,width, height, relative_x, relative_y
+        walkRightBodyPosition_3 = AccessoryPosition(120,106,32,51, 6, 38) #x, y ,width, height, relative_x, relative_y
+
+        walkUpBodyPosition_0 = AccessoryPosition(0,164,35,51, 6, 38) #x, y ,width, height, relative_x, relative_y
+        walkUpBodyPosition_1 = AccessoryPosition(40,164,35,52, 6, 38) #x, y ,width, height, relative_x, relative_y
+        walkUpBodyPosition_2 = AccessoryPosition(79,164,36,51, 6, 38) #x, y ,width, height, relative_x, relative_y
+        walkUpBodyPosition_3 = AccessoryPosition(119,164,35,51, 6, 38) #x, y ,width, height, relative_x, relative_y
+
+        acc2_body_filepath = 'C:\\Users\\Robert\\Repos\\PythonGameFramework\\source\\dir_image\\dir_sprites\\hero\\hero_acc3_body_compress.png'
+        bodyAccessory = AnimationAccessory(acc2_body_filepath,
+                                           'Walk',
+                                           'Walk_Body1',
+                                           {LEFT_ANIM:[walkLeftBodyPosition_0, walkLeftBodyPosition_1, walkLeftBodyPosition_2, walkLeftBodyPosition_3],
+                                            RIGHT_ANIM: [walkRightBodyPosition_0, walkRightBodyPosition_1, walkRightBodyPosition_2, walkRightBodyPosition_3],
+                                            UP_ANIM: [walkUpBodyPosition_0, walkUpBodyPosition_1, walkUpBodyPosition_2, walkUpBodyPosition_3],
+                                            DOWN_ANIM: [walkDownBodyPosition_0, walkDownBodyPosition_1, walkDownBodyPosition_2, walkDownBodyPosition_3]})
+
+
+
+
         heroFilepath = 'C:\\Users\\Robert\\Repos\\PythonGameFramework\\source\\dir_image\\dir_sprites\\hero\\hero_walk_enlarge.png'
 
         walkLeftPosition_0 = AnimationPosition(0,96,48,96) #x, y ,width, height
@@ -775,7 +848,9 @@ class Renderer:
                                          RIGHT_ANIM: [walkRightPosition_0, walkRightPosition_1, walkRightPosition_2, walkRightPosition_3],
                                          UP_ANIM: [walkUpPosition_0, walkUpPosition_1, walkUpPosition_2, walkUpPosition_3],
                                          DOWN_ANIM: [walkDownPosition_0, walkDownPosition_1, walkDownPosition_2, walkDownPosition_3]},
-                                        []) #no accessory for now
+                                        [feetAccessory,
+                                         bodyAccessory,
+                                         headAccessory])
 
         animationState = AnimationState(walkAnimation, #the current animation state
                                         LEFT_ANIM, #direction
