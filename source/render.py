@@ -365,7 +365,6 @@ class Renderer:
                                 keepGoing = False #you have blitted the entire visible section
 
     #TODO - calculate if the actor is onscreen
-#     def renderAllActors(self, actorsWrapper):
     def renderAllActors(self):
         for actor in self.actors:
             if type(actor) is SimpleBox and False: #TODO - debug, turning off to test sprite render
@@ -378,7 +377,7 @@ class Renderer:
             else:
                 image = actor.characterSprite.spriteAnimations[0].image #TODO, hardcoded, load the actual animation
                 frame = actor.characterSprite.animationState.frameIndex
-                position = actor.characterSprite.spriteAnimations[0].positions_px[actor.direction][frame] #get the 'Left', 1 images
+                position = actor.characterSprite.spriteAnimations[0].positions_px[actor.direction][frame]
                 self.screen.blit(image,
                                  (actor.position[0]+PRAM.BOX_FUDGE - self.cameraPosition[0],
                                   actor.position[1] - self.cameraPosition[1]),  # screen position
@@ -388,9 +387,7 @@ class Renderer:
                                   position.height))  # tilemap height
             actor.changed = False
         return
-    
-    #TODO 
-#     def renderChangedActors(self, actorsWrapper):
+
     def renderChangedActors(self):
         for actor in self.actors:
             if actor.changed:
