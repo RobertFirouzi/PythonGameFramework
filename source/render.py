@@ -843,7 +843,7 @@ class Renderer:
         walkAnimation = SpriteAnimation(heroFilepath,
                                         'Walk', #name
                                         4, #frames
-                                        7, #fps
+                                        2, #fps
                                         {LEFT_ANIM:[walkLeftPosition_0, walkLeftPosition_1, walkLeftPosition_2, walkLeftPosition_3],
                                          RIGHT_ANIM: [walkRightPosition_0, walkRightPosition_1, walkRightPosition_2, walkRightPosition_3],
                                          UP_ANIM: [walkUpPosition_0, walkUpPosition_1, walkUpPosition_2, walkUpPosition_3],
@@ -872,8 +872,8 @@ class Renderer:
                         index = 0 #keep track of which frame we are on
                         for position in positions: #superimpose the accesory onto the base, frame by frame
                             baseImage.blit(accessoryImage, # where to copy to on the base image
-                                             (accessory.positions_px[direction][index].start_x + position.relative_x,
-                                              accessory.positions_px[direction][index].start_y + position.relative_y),
+                                             (animation.positions_px[direction][index].start_x + position.relative_x,
+                                              animation.positions_px[direction][index].start_y + position.relative_y),
                                              (position.start_x,  # where to to start on the accessory map
                                               position.start_y,  #
                                               position.width,  # tilemap  width
