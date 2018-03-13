@@ -2,20 +2,16 @@ PROJECT CharmQuark
 Can re-write render using pyopengl? - seems prudent.  Can learn open gl separately (in C++?) then work on porting to the game
 	pygame can still be used for input processing etc
 
+Why hardcode order of rendering and limit number of tilemaps/actors?  Have a list of renderLayers that go in order (renderLayer can be panorama, actors, tileMaps, etc)
+
 Graphics:
 	need to inteligently laod assets: main char stuff loaded all the time, but load assets for levels particular 	to that area
 	thread(s) to load assets?:  Seperate thread that runs in background loading assets as needed (approaching 	the start of a new area, new character loaded, new effects, etc)
 
 update changed actors algorithm to re-render them if on a changed tile
-Sprites for actors
-Animate actors
-	can probably put the AnimationState, and list of SpriteAnimations together under a wrapper class
-		"SpriteAnimationsSuite"?
-			SpriteAnimations[]			
-			CurrentAnimation*
-			AnimationState
 
-Instead of re-render entire screen on a camera move, can we shift the entire screen and re-render the shifted off part?
+
+Instead of re-render entire screen on a camera move, can we shift the entire screen and re-render the shifted off part? - probably not a good use of time, at least look into opengl first
 
 minor optimizations: 
 lists to tuples
