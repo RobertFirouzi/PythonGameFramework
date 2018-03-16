@@ -3,7 +3,59 @@ import database
 import json #to parse the lists in the DB
 from scenery import PanoramicImage, Tilemap
 
+
+class LevelDataFactory:
+    def __init__(self, levelIndex):
+        self.levelIndex = levelIndex
+
+
+    def loadLevel(self):
+
+
+        return LevelData
+
+    def loadName(self):
+        pass
+
+    def loadBorders(self):
+        pass
+
+    def loadPanoramaLayer(self):
+        pass
+
+    def loadTilemap(self):
+        pass
+
+    def loadActors(self):
+        pass
+
+    def loadGameEvents(self):
+        pass
+
+    def loadLevelEvents(self):
+        pass
+
+
 class LevelData:
+    def __init__(self,
+                 name,
+                 size_tiles,
+                 renderLayers,
+                 borders,
+                 eventTiles,
+                 gameEvents,
+                 actors):
+        self.name = name
+        self.size_tiles = size_tiles
+        self.renderLayers = renderLayers
+        self.borders = borders
+        self.eventTiles = eventTiles
+        self.gameEvents = gameEvents
+        self.actors = actors
+
+
+
+class LevelData_Deprecated:
     def __init__(self,
                  name = '',
                  size = (10,10),

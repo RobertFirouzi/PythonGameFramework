@@ -98,7 +98,9 @@ class AnimatedPanorama(Animated):
                  fps,
                  fpi,
                  numFrames,
-                 imageData):
+                 imageData,
+                 size,
+                 ): #TODO - add params for panorama here
         super(AnimatedPanorama, self).__init__(name,panoramaLoader,isAlpha,isAnimated,fps,fpi,numFrames,imageData)
 
     def loadPanorama(self):
@@ -113,7 +115,7 @@ class AnimatedTile(Animated):
                  fps,
                  fpi,
                  numFrames,
-                 imageData):
+                 imageData): #TODO - add params for Tile here
         super(AnimatedTile, self).__init__(name,tileLoader,isAlpha,isAnimated,fps,fpi,numFrames,imageData)
 
 class AnimatedAccessory(Animated):
@@ -149,20 +151,20 @@ class AnimatedSprite(Animated):
 
 #Base class for RenderParameters
 class RenderParams:
-    def __init_(self):
-        pass
+    def __init_(self, imageData):
+        self.imageData = imageData
 
 class RenderPanoramaParams(RenderParams):
-    def __init__(self):
-        super(RenderPanoramaParams, self).__init__()
+    def __init__(self, imageData):
+        super(RenderPanoramaParams, self).__init__(imageData)
 
 class RenderTileParams(RenderParams):
-    def __init__(self):
-        super(RenderTileParams, self).__init__()
+    def __init__(self, imageData):
+        super(RenderTileParams, self).__init__(imageData)
 
 class RenderActorParams(RenderParams):
-    def __init__(self):
-        super(RenderActorParams, self).__init__()
+    def __init__(self, imageData):
+        super(RenderActorParams, self).__init__(imageData)
 
 
 #base class for renderingActions
@@ -175,6 +177,9 @@ class RenderAction:
         pass
 
     def renderChanged(self, renderParams):
+        pass
+
+    def render(self, renderParams):
         pass
 
 class RenderPanoramaAction(RenderAction):
@@ -199,24 +204,59 @@ class RenderActorAction(RenderAction):
     def __init__(self, target):
         super(RenderActorAction, self).__init__(target)
 
-    def renderAll(self, renderActorParams):
+    #Always render the full actor, but may only call this method id actor has changed
+    def render(self, renderActorParams):
         pass
 
-    def renderChanged(self, renderActorParams):
+class RenderLayer:
+    def __init__(self):
         pass
+
+    def renderAll(self, renderParams):
+        pass
+
+    def renderChanged(self, renderParams):
+        pass
+
+class PanoramaLayer(RenderLayer):
+    def __init__(self, panoramicImage):
+        super(PanoramaLayer, self).__init__()
+        self.panoramicImage = panoramicImage
+
+    def renderAll(self, renderPanoramaParams):
+        self.panoramicImage.renderAll(renderPanoramaParams)
+
+    def renderChanged(self, renderPanoramaParams):
+        self.panoramicImage.renderChanged(renderPanoramaParams)
+
+class TileLayer(RenderLayer):
+    def __init__(self, animatedTiles):
+        super(TileLayer, self).__init__()
+        self.animatedTiles = animatedTiles
+
+    def renderAll(self, renderTileParams):
+        for tile in self.animatedTiles:
+            tile.render(renderTileParams)
+
+    def renderChanged(self, renderTileParams):
+        for tile in self.animatedTiles:
+            if tile.isChanged:
+                tile.render(renderTileParams)
 
 #contains all of the actors to be rendered on a layer
-class ActorLayer:
+class ActorLayer(RenderLayer):
     def __init__(self, actors):
-        self.actors=actors
+        super(ActorLayer, self).__init__()
+        self.actors = actors
 
-    def renderAll(self):
+    def renderAll(self, renderActorParams):
         for actor in self.actors:
-            actor.renderAll()
+            actor.render(renderActorParams)
 
-    def renderChanged(self):
+    def renderChanged(self, renderActorParams):
         for actor in self.actors:
-            actor.renderChanged()
+            if actor.isChanged:
+                actor.render(renderActorParams)
 
 
 #Base class to be inherited by any classes which are rendered to the target (screen)
@@ -230,11 +270,14 @@ class Renderable:
     def renderChanged(self, renderParams):
         self.renderAction.renderChanged(renderParams)
 
-class PanoramicImage(Renderable):
+    def render(self, renderParams):
+        self.renderAction.render(renderParams)
+
+class PanoramicImage(Renderable): #TODO add animated panorama
     def __init__(self, renderPanoramaAction):
         super(PanoramicImage, self).__init__(renderPanoramaAction)
 
-class Tilemap(Renderable):
+class Tilemap(Renderable): #TODO add tileList
     def __init__(self, renderTileAction):
         super(Tilemap, self).__init__(renderTileAction)
 
@@ -276,7 +319,7 @@ class CharacterSprite(Actor):
         self.animatedConditionEnum = animatedConditionEnum
         self.frameIndex = frameIndex
         self.frameCount = frameCount
-        self.speed =frameCount
+        self.speed =speed
 
 #Controlling class for overall rendering process
 #Calls the update and render methods on each layer to be rendered
