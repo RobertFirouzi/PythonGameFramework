@@ -2,7 +2,13 @@ PROJECT CharmQuark
 Can re-write render using pyopengl? - seems prudent.  Can learn open gl separately (in C++?) then work on porting to the game
 	pygame can still be used for input processing etc
 
+As you add boxes to the render queue, at a certain percetagne of screen re-render, just change to render all
+
 Why hardcode order of rendering and limit number of tilemaps/actors?  Have a list of renderLayers that go in order (renderLayer can be panorama, actors, tileMaps, etc)
+	Need to move algorithms for renderQueue and rendering
+	Need to update loadLevel/loadData for each layer
+	
+
 
 Graphics:
 	need to inteligently laod assets: main char stuff loaded all the time, but load assets for levels particular 	to that area

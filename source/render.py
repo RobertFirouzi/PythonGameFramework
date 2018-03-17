@@ -28,6 +28,10 @@ class Renderer:
         self.renderQueue = list()
         self.frameCount = 0
 
+    #call this when a new set of assets are loaded
+    def initialize(self): #TODO need to call this
+        pass
+
     def render(self):
         if self.camera.moveFlag:
             self.isRenderAll = True
@@ -38,12 +42,10 @@ class Renderer:
             for layer in self.renderLayers:
 
                 if layer.layerType == LayerTypeEnum.PANORAMA:
-                    for panoramicImage in layer.panoramicImages:
-                        self.renderAllPanorama(panoramicImage.currentPanorama)
+                    self.renderAllPanorama(layer.panoramicImage.animatedPanorama)
 
                 elif layer.layerType == LayerTypeEnum.TILEMAP:
-                    for tilemap in layer.animatedTilemaps:
-                        self.renderAllTiles(tilemap)
+                    self.renderAllTiles(layer.tilemap)
 
                 elif layer.layerType == LayerTypeEnum.SPRITE:
                     self.renderAllActors(layer.characterSprites)
@@ -51,12 +53,10 @@ class Renderer:
             for layer in self.renderLayers:
 
                 if layer.layerType == LayerTypeEnum.PANORAMA:
-                    for panoramicImage in layer.panoramicImages:
-                        self.renderChangedPanorama(panoramicImage.currentPanorama)
+                    self.renderChangedPanorama(layer.panoramicImage.animatedPanorama)
 
                 elif layer.layerType == LayerTypeEnum.TILEMAP:
-                    for tilemap in layer.animatedTilemaps:
-                        self.renderChangedTiles(tilemap)
+                    self.renderChangedTiles(layer.tilemap)
 
                 elif layer.layerType == LayerTypeEnum.ACTOR:
                     self.renderChangedActors(layer.characterSprites)
@@ -66,9 +66,35 @@ class Renderer:
         self.isRenderAll = False
         #clear rendered tiles, stored in tilemap now?
 
-        self.frameCount+=1
+        self.frameCount+=1 #TODO needed?
 
     def updateAnimatedIndex(self):
+        for layer in self.renderLayers:
+
+            if layer.layerType == LayerTypeEnum.PANORAMA:
+                isChanged = layer.panoramicImage.update()
+                if not self.isRenderAll and isChanged:
+                    self.addRenderBoxChangedPanorama(layer.panoramicImage.animatedPanorama)
+
+            if layer.layerType == LayerTypeEnum.TILEMAP:
+                for tile in layer.tilemap.animatedTiles:
+                    isChanged = tile.update()
+                    if not self.isRenderAll and isChanged:
+                        self.addRenderBoxChangedTile(tile)
+
+            if layer.layerType == LayerTypeEnum.SPRITE:
+                for sprite in layer.characterSprites:
+                    isChanged = sprite.update()
+                    if not self.isRenderAll and isChanged:
+                        self.addRenderBoxChangedSprite(sprite)
+
+    def addRenderBoxChangedPanorama(self, panorama):
+        pass
+
+    def addRenderBoxChangedTile(self, tile):
+        pass
+
+    def addRenderBoxChangedSprite(self, sprite):
         pass
 
     def renderAllPanorama(self, panorama):
@@ -88,9 +114,6 @@ class Renderer:
 
     def renderChangedActors(self, sprites):
         pass
-
-
-
 
 
 #renderMethods list populated by game depending on the needs of the currently loaded level/menu

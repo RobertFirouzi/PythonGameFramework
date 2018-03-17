@@ -4,18 +4,6 @@
 from enum import Enum
 from parameters import *
 
-#container class for coordinates of 1 frame of a sprite image
-class SpriteCoordinates:
-    def __init__(self, start, size):
-        self.start = start
-        self.size = size
-
-#container class for a sprite accessory, needs to know the raltive position of the base image to blit to
-class AccessoryCoordinates(SpriteCoordinates):
-    def __init__(self, start, size, relative_start):
-        super(AccessoryCoordinates, self).__init__(start, size)
-        self.relative_start = relative_start
-
 class AnimatedConditionEnum(Enum):
     FROZEN = 0
     MOVE_FORWARD = 1
@@ -36,6 +24,18 @@ class DirectionEnum(Enum):
     RIGHT = 6
     RIGHT_DOWN = 7
 
+#container class for coordinates of 1 frame of a sprite image
+class SpriteCoordinates:
+    def __init__(self, start, size):
+        self.start = start
+        self.size = size
+
+#container class for a sprite accessory, needs to know the raltive position of the base image to blit to
+class AccessoryCoordinates(SpriteCoordinates):
+    def __init__(self, start, size, relative_start):
+        super(AccessoryCoordinates, self).__init__(start, size)
+        self.relative_start = relative_start
+
 class ScrollSpeed:
     def __init__(self, mult_x, div_x, mult_y, div_y):
         self.mult_x = mult_x
@@ -49,6 +49,46 @@ class Image:
         self.isAlpha = isAlpha
 
         self.imageData = None
+
+class AnimationState:
+    def __init__(self,
+                 animatedConditionEnum = AnimatedConditionEnum.FROZEN,
+                 speed = 100,
+                 frameIndex = 0,
+                 frameCount = 0):
+        self.animatedConditionEnum = animatedConditionEnum
+        self.speed = speed  # percent
+        self.frameIndex = frameIndex
+        self.frameCount = frameCount
+
+        self.numFrames = 1
+        self.fpi = 1
+
+    #call this with the num frames and fpi
+    def initialize(self,
+                   numFrames = 1,
+                   fpi = 1,
+                   animatedConditionEnum = AnimatedConditionEnum.FROZEN,
+                   speed = 100,
+                   frameIndex = 0,
+                   frameCount = 0):
+        self.numFrames = numFrames
+        self.fpi = fpi
+        self.animatedConditionEnum = animatedConditionEnum
+        self.speed = speed
+        self.frameIndex = frameIndex
+        self.frameCount = frameCount
+
+    #returns true if image index updated
+    def updateAnimatedIndex(self):
+        if self.animatedConditionEnum != AnimatedConditionEnum.FROZEN:
+            self.frameCount += 1
+        if self.numFrames ==1:
+            return False
+        if self.frameCount % self.fpi == 0:
+            self.frameIndex = (self.frameIndex+1)%self.numFrames
+            return True
+        return False
 
 #base class for any image class that needs to be rendered
 class Animated:
@@ -105,12 +145,28 @@ class AnimatedPanorama(AnimatedSet): #TODO - documentation in scenery.py is good
         self.motionY_pxs = motionY_pxs
 
 
-        self.motion_x_multiplier = motionX_pxs/GAME_FPS #calculated by the Renderer on level load based on Game FPS
+        self.motion_x_multiplier = motionX_pxs/GAME_FPS
         self.motion_y_multiplier = motionY_pxs/GAME_FPS
 
-        self.imageIndex = 0 #tracks which image to display, if animated
+        self.animationState = AnimationState()
+        self.animationState.initialize(self.numFrames, self.fpi)
         self.motionOffset_X = 0 #used to determine if re-render needed on render changed call
         self.motionOffset_Y = 0
+
+    #increments the framecount and updates the animation and motion
+    def update(self):
+        isUpdated = self.animationState.updateAnimatedIndex()
+        if self.isMotion_X:
+            motionOffset = int(self.motion_x_multiplier * self.animationState.frameCount)
+            if motionOffset != self.motionOffset_X:  # panorama needs to move
+                self.motionOffset_X = motionOffset
+                isUpdated = True  # if panorama needs to scroll, re-render visibile sections
+        if self.isMotion_Y:
+            motionOffset = int(self.motion_y_multiplier * self.animationState.frameCount)
+            if motionOffset != self.motionOffset_Y:
+                self.motionOffset_Y = motionOffset
+                isUpdated = True
+        return isUpdated
 
 class AnimatedTile(Animated):
     def __init__(self,
@@ -121,22 +177,14 @@ class AnimatedTile(Animated):
         super(AnimatedTile, self).__init__(name, fps, numFrames)
         self.coordinates = coordinates #index into correct positon with frameIndex
 
-        self.frameIndex = 0 #current displayed frame
-        self.frameCount = 0 #counts since last update of frame
-        self.speed = 100 #percent
+        self.isChanged = False
+        self.animationState = AnimationState()
+        self.animationState.initialize(self.numFrames, self.fpi)
 
-class AnimatedTileMap:
-    def __init__(self,
-                 name,
-                 image,
-                 tileSize,
-                 size_tiles,
-                 animatedTiles):
-        self.name = name
-        self.image = image
-        self.tileSize = tileSize
-        self.size_tiles = size_tiles
-        self.animatedTiles = animatedTiles
+
+    def update(self):
+        self.isChanged = self.animationState.updateAnimatedIndex()
+        return self.isChanged
 
 class AnimatedAccessory(AnimatedImage):
     def __init__(self,
@@ -168,16 +216,27 @@ class Renderable:
 
 class PanoramicImage(Renderable):
     def __init__(self,
-                 animatedPanoramas,
-                 currentPanorama,
-                 animatedConditionEnum,
-                 speed):
+                 animatedPanorama):
         super(PanoramicImage, self).__init__()
+        self.animatedPanorama = animatedPanorama
+
+    def update(self):
+        return self.animatedPanorama.update()
+
 
 class Tilemap(Renderable):
     def __init__(self,
-                 animatedTileMaps):
+                 name,
+                 image,
+                 tileSize,
+                 size_tiles,
+                 animatedTiles):
         super(Tilemap, self).__init__()
+        self.name = name
+        self.image = image
+        self.tileSize = tileSize
+        self.size_tiles = size_tiles
+        self.animatedTiles = animatedTiles
 
 class Actor(Renderable):
     def __init__(self,
@@ -190,7 +249,7 @@ class Actor(Renderable):
         self.position = [0,0]
         self.direction = DirectionEnum.DOWN
         self.isFocus = False
-        self.isChanged = True
+        self.isChanged = False
 
 class CharacterSprite(Actor):
     def __init__(self,
@@ -201,10 +260,12 @@ class CharacterSprite(Actor):
         self.animatedSprites = animatedSprites
 
         self.currentSprite = animatedSprites[0]
-        self.animatedConditionEnum = AnimatedConditionEnum.FROZEN
-        self.frameIndex = 0
-        self.frameCount = 0
-        self.speed = 100 #percent
+        self.animationState = AnimationState()
+        self.animationState.initialize(self.currentSprite.numFrames, self.currentSprite.fpi)
+
+    def update(self):
+        self.isChanged = self.animationState.updateAnimatedIndex()
+        return self.isChanged
 
 
 class RenderLayer:
@@ -212,14 +273,14 @@ class RenderLayer:
         self.layerType = layerType
 
 class PanoramaLayer(RenderLayer):
-    def __init__(self, panoramicImages):
+    def __init__(self, panoramicImage):
         super(PanoramaLayer, self).__init__(LayerTypeEnum.PANORAMA)
-        self.panoramicImage = panoramicImages
+        self.panoramicImage = panoramicImage
 
 class TileLayer(RenderLayer):
-    def __init__(self, animatedTilemaps):
+    def __init__(self, tilemap):
         super(TileLayer, self).__init__(LayerTypeEnum.TILEMAP)
-        self.animatedTilemaps = animatedTilemaps
+        self.tilemaps = tilemap
 
 class SpriteLayer(RenderLayer):
     def __init__(self, characterSprites):
