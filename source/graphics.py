@@ -2,7 +2,7 @@
 #Contains the render class , and all supporting classes
 
 from enum import Enum
-import pygame
+from parameters import *
 
 #container class for coordinates of 1 frame of a sprite image
 class SpriteCoordinates:
@@ -16,345 +16,212 @@ class AccessoryCoordinates(SpriteCoordinates):
         super(AccessoryCoordinates, self).__init__(start, size)
         self.relative_start = relative_start
 
-#base class used to implement loading data method
-class Dataloader:
-    def __init__(self):
-        pass
-
-    def loadData(self, isAlpha):
-        pass
-
-class ImageLoader(Dataloader):
-    def __init__(self):
-        super(ImageLoader, self).__init__()
-
-class PanoramaLoader(ImageLoader):
-    def __init__(self):
-        super(PanoramaLoader, self).__init__()
-
-    def loadData(self, isAlpha, isAnimated, numImages, filePath, imageType):
-        convertedImages = []
-
-        if isAnimated: #path is to a directory of images
-            for i in range(numImages):
-                if isAlpha:
-                    convertedImages.append(pygame.image.load(filePath+'\\'+str(i)+'.'+imageType).convert_alpha())
-                else:
-                    convertedImages.append(pygame.image.load(filePath+'\\'+str(i)+'.'+imageType).convert())
-
-        else: #path is directly to an image file
-            if isAlpha:
-                convertedImages.append(pygame.image.load(filePath).convert_alpha())  # tuple of one item
-            else:
-                convertedImages.append(pygame.image.load(filePath).convert())
-
-        convertedImages = tuple(convertedImages)
-        return convertedImages
-
-class TileLoader(ImageLoader):
-    def __init__(self):
-        super(TileLoader, self).__init__()
-
-class SpriteLoader(ImageLoader):
-    def __init__(self):
-        super(SpriteLoader, self).__init__()
-
 class AnimatedConditionEnum(Enum):
     FROZEN = 0
     MOVE_FORWARD = 1
     MOVE_BACKWARD = 2
 
+class LayerTypeEnum(Enum):
+    PANORAMA = 0
+    TILEMAP = 1
+    SPRITE = 2
+
+class DirectionEnum(Enum):
+    DOWN = 0
+    DOWN_LEFT = 1
+    LEFT = 2
+    LEFT_UP = 3
+    UP = 4
+    UP_RIGHT = 5
+    RIGHT = 6
+    RIGHT_DOWN = 7
+
+class ScrollSpeed:
+    def __init__(self, mult_x, div_x, mult_y, div_y):
+        self.mult_x = mult_x
+        self.mult_x = mult_x
+        self.div_y = div_y
+        self.div_y = div_y
+
+class Image:
+    def __init__(self, filepath, isAlpha):
+        self.filepath = filepath
+        self.isAlpha = isAlpha
+
+        self.imageData = None
 
 #base class for any image class that needs to be rendered
 class Animated:
     def __init__(self,
                  name,
-                 dataLoader,
-                 isAlpha,
-                 isAnimated,
                  fps,
-                 fpi,
-                 numFrames,
-                 imageData):
-
+                 numFrames):
         self.name = name
-        self.dataLoader = dataLoader
-        self.isAlpha = isAlpha
-        self.isAnimated = isAnimated
         self.fps = fps
-        self.fpi = fpi
         self.numFrames = numFrames
-        self.imageData = imageData
 
-    def loadImage(self):
-        self.imageData =  self.dataLoader.loadData()
+        self.fpi = round(GAME_FPS/fps,2)
 
-class AnimatedPanorama(Animated):
+#For classes which have seperate images to create an animation
+class AnimatedSet(Animated):
     def __init__(self,
                  name,
-                 panoramaLoader,
-                 isAlpha,
-                 isAnimated,
                  fps,
-                 fpi,
                  numFrames,
-                 imageData,
-                 size,
-                 ): #TODO - add params for panorama here
-        super(AnimatedPanorama, self).__init__(name,panoramaLoader,isAlpha,isAnimated,fps,fpi,numFrames,imageData)
+                 images):
+        super(AnimatedSet, self).__init__(name,fps,numFrames)
+        self.images = images
 
-    def loadPanorama(self):
-        self.imageData = self.loadData(self.isAlpha,self.isAnimated,self.numImages,self.filePath,self.imageType)
+#for classes which animate by using sections of one image
+class AnimatedImage(Animated):
+    def __init__(self,
+                 name,
+                 fps,
+                 numFrames,
+                 image):
+        super(AnimatedImage, self).__init__(name,fps,numFrames)
+        self.image = image
+
+class AnimatedPanorama(AnimatedSet): #TODO - documentation in scenery.py is good, ionclude it
+    def __init__(self,
+                 name,
+                 fps,
+                 numFrames,
+                 images,
+                 size,
+                 visibleSections,
+                 scrollSpeed,
+                 isMotion_X,
+                 isMotion_Y,
+                 motionX_pxs,
+                 motionY_pxs):
+        super(AnimatedPanorama, self).__init__(name,fps,numFrames,images)
+        self.size = size
+        self.visibleSections = visibleSections
+        self.scrollSpeed = scrollSpeed
+        self.isMotion_X = isMotion_X
+        self.isMotion_Y = isMotion_Y
+        self.motionX_pxs = motionX_pxs
+        self.motionY_pxs = motionY_pxs
+
+
+        self.motion_x_multiplier = motionX_pxs/GAME_FPS #calculated by the Renderer on level load based on Game FPS
+        self.motion_y_multiplier = motionY_pxs/GAME_FPS
+
+        self.imageIndex = 0 #tracks which image to display, if animated
+        self.motionOffset_X = 0 #used to determine if re-render needed on render changed call
+        self.motionOffset_Y = 0
 
 class AnimatedTile(Animated):
     def __init__(self,
                  name,
-                 tileLoader,
-                 isAlpha,
-                 isAnimated,
                  fps,
-                 fpi,
                  numFrames,
-                 imageData): #TODO - add params for Tile here
-        super(AnimatedTile, self).__init__(name,tileLoader,isAlpha,isAnimated,fps,fpi,numFrames,imageData)
+                 coordinates):  #list of locations on the tilemap image
+        super(AnimatedTile, self).__init__(name, fps, numFrames)
+        self.coordinates = coordinates #index into correct positon with frameIndex
 
-class AnimatedAccessory(Animated):
+        self.frameIndex = 0 #current displayed frame
+        self.frameCount = 0 #counts since last update of frame
+        self.speed = 100 #percent
+
+class AnimatedTileMap:
     def __init__(self,
                  name,
-                 spriteLoader,
-                 isAlpha,
-                 isAnimated,
+                 image,
+                 tileSize,
+                 size_tiles,
+                 animatedTiles):
+        self.name = name
+        self.image = image
+        self.tileSize = tileSize
+        self.size_tiles = size_tiles
+        self.animatedTiles = animatedTiles
+
+class AnimatedAccessory(AnimatedImage):
+    def __init__(self,
+                 name,
                  fps,
-                 fpi,
                  numFrames,
-                 imageData,
+                 image,
                  accessoryCoordinates):
-        super(AnimatedAccessory, self).__init__(name,spriteLoader,isAlpha,isAnimated,fps,fpi,numFrames,imageData)
+        super(AnimatedAccessory, self).__init__(name,fps,numFrames,image)
         self.accessoryCoordinates = accessoryCoordinates
 
-class AnimatedSprite(Animated):
+class AnimatedSprite(AnimatedImage):
     def __init__(self,
                  name,
-                 spriteLoader,
-                 isAlpha,
-                 isAnimated,
                  fps,
-                 fpi,
                  numFrames,
-                 imageData,
+                 image,
                  spriteCoordinates,
                  animationAccessories):
-        super(AnimatedSprite, self).__init__(name,spriteLoader,isAlpha,isAnimated,fps,fpi,numFrames,imageData)
+        super(AnimatedSprite, self).__init__(name,fps,numFrames,image)
         self.spriteCoordinates = spriteCoordinates
         self.animationAccessories = animationAccessories
 
 
-#Base class for RenderParameters
-class RenderParams:
-    def __init_(self, imageData):
-        self.imageData = imageData
-
-class RenderPanoramaParams(RenderParams):
-    def __init__(self, imageData):
-        super(RenderPanoramaParams, self).__init__(imageData)
-
-class RenderTileParams(RenderParams):
-    def __init__(self, imageData):
-        super(RenderTileParams, self).__init__(imageData)
-
-class RenderActorParams(RenderParams):
-    def __init__(self, imageData):
-        super(RenderActorParams, self).__init__(imageData)
-
-
-#base class for renderingActions
-class RenderAction:
-    def __init__(self, target):
-        self.target = target #surface to render to, eg screen, or anoy other 'blittable' surface
-
-    #implement in the subclass
-    def renderAll(self, renderParams):
-        pass
-
-    def renderChanged(self, renderParams):
-        pass
-
-    def render(self, renderParams):
-        pass
-
-class RenderPanoramaAction(RenderAction):
-    def __init__(self, target):
-        super(RenderPanoramaAction, self).__init__(target)
-
-    #algorithm here to render the panorama to the screen
-    def renderAll(self, renderPanoramaParams):
-        pass
-
-    def renderChanged(self, renderPanoramaParams):
-        pass
-
-class RenderTileAction(RenderAction):
-    def __init__(self, target):
-        super(RenderTileAction, self).__init__(target)
-
-    def render(self, renderTileParams):
-        pass
-
-class RenderActorAction(RenderAction):
-    def __init__(self, target):
-        super(RenderActorAction, self).__init__(target)
-
-    #Always render the full actor, but may only call this method id actor has changed
-    def render(self, renderActorParams):
-        pass
-
-class RenderLayer:
+#Base class to be inherited by any classes which are rendered to the target (screen)
+class Renderable:
     def __init__(self):
         pass
 
-    def renderAll(self, renderParams):
-        pass
+class PanoramicImage(Renderable):
+    def __init__(self,
+                 animatedPanoramas,
+                 currentPanorama,
+                 animatedConditionEnum,
+                 speed):
+        super(PanoramicImage, self).__init__()
 
-    def renderChanged(self, renderParams):
-        pass
-
-class PanoramaLayer(RenderLayer):
-    def __init__(self, panoramicImage):
-        super(PanoramaLayer, self).__init__()
-        self.panoramicImage = panoramicImage
-
-    def renderAll(self, renderPanoramaParams):
-        self.panoramicImage.renderAll(renderPanoramaParams)
-
-    def renderChanged(self, renderPanoramaParams):
-        self.panoramicImage.renderChanged(renderPanoramaParams)
-
-class TileLayer(RenderLayer):
-    def __init__(self, animatedTiles):
-        super(TileLayer, self).__init__()
-        self.animatedTiles = animatedTiles
-
-    def renderAll(self, renderTileParams):
-        for tile in self.animatedTiles:
-            tile.render(renderTileParams)
-
-    def renderChanged(self, renderTileParams):
-        for tile in self.animatedTiles:
-            if tile.isChanged:
-                tile.render(renderTileParams)
-
-#contains all of the actors to be rendered on a layer
-class ActorLayer(RenderLayer):
-    def __init__(self, actors):
-        super(ActorLayer, self).__init__()
-        self.actors = actors
-
-    def renderAll(self, renderActorParams):
-        for actor in self.actors:
-            actor.render(renderActorParams)
-
-    def renderChanged(self, renderActorParams):
-        for actor in self.actors:
-            if actor.isChanged:
-                actor.render(renderActorParams)
-
-
-#Base class to be inherited by any classes which are rendered to the target (screen)
-class Renderable:
-    def __init__(self, renderAction):
-        self.renderAction = renderAction
-
-    def renderAll(self, renderParams):
-        self.renderAction.renderAll(renderParams)
-
-    def renderChanged(self, renderParams):
-        self.renderAction.renderChanged(renderParams)
-
-    def render(self, renderParams):
-        self.renderAction.render(renderParams)
-
-class PanoramicImage(Renderable): #TODO add animated panorama
-    def __init__(self, renderPanoramaAction):
-        super(PanoramicImage, self).__init__(renderPanoramaAction)
-
-class Tilemap(Renderable): #TODO add tileList
-    def __init__(self, renderTileAction):
-        super(Tilemap, self).__init__(renderTileAction)
+class Tilemap(Renderable):
+    def __init__(self,
+                 animatedTileMaps):
+        super(Tilemap, self).__init__()
 
 class Actor(Renderable):
     def __init__(self,
-                 renderActorAction,
                  name,
-                 size,
-                 position,
-                 direction,
-                 isFocus,
-                 isChanged):
-        super(Actor, self).__init__(renderActorAction)
+                 size):
+        super(Actor, self).__init__()
         self.name = name
         self.size = size
-        self.position = position
-        self.direction = direction
-        self.isFocus = isFocus
-        self.isChanged = isChanged
+
+        self.position = [0,0]
+        self.direction = DirectionEnum.DOWN
+        self.isFocus = False
+        self.isChanged = True
 
 class CharacterSprite(Actor):
     def __init__(self,
-                 renderActorAction,
                  name,
                  size,
-                 position,
-                 direction,
-                 isFocus,
-                 isChanged,
-                 animatedSprites,
-                 currentSprite,
-                 animatedConditionEnum,
-                 frameIndex,
-                 frameCount,
-                 speed):
-        super(CharacterSprite, self).__init__(renderActorAction,name,size,position,direction,isFocus,isChanged)
+                 animatedSprites):
+        super(CharacterSprite, self).__init__(name,size)
         self.animatedSprites = animatedSprites
-        self.currentSprite = currentSprite
-        self.animatedConditionEnum = animatedConditionEnum
-        self.frameIndex = frameIndex
-        self.frameCount = frameCount
-        self.speed =speed
 
-#Controlling class for overall rendering process
-#Calls the update and render methods on each layer to be rendered
-class Renderer:
-    def __init__(self):
-        self.camera = None
-        self.layers = None #contains an ordered list of layers to render
-        self.mapTileSize = None
-
-        self.renderLayers = []
-
-        self.isRenderAll = True
-        self.renderQueue = []
+        self.currentSprite = animatedSprites[0]
+        self.animatedConditionEnum = AnimatedConditionEnum.FROZEN
+        self.frameIndex = 0
         self.frameCount = 0
+        self.speed = 100 #percent
 
-    #increments the animated indexes, and the renderQueue
-    def updateAnimatedIndex(self):
-        pass
 
-    def render(self):
-        if self.camera.moveFlag:
-            self.isRenderAll = True
+class RenderLayer:
+    def __init__(self, layerType):
+        self.layerType = layerType
 
-        self.updateAnimatedIndex()
+class PanoramaLayer(RenderLayer):
+    def __init__(self, panoramicImages):
+        super(PanoramaLayer, self).__init__(LayerTypeEnum.PANORAMA)
+        self.panoramicImage = panoramicImages
 
-        if self.isRenderAll:
-            for layer in self.renderLayers:
-                layer.renderAll()
-        else:
-            for layer in self.renderLayers:
-                layer.renderChanged()
+class TileLayer(RenderLayer):
+    def __init__(self, animatedTilemaps):
+        super(TileLayer, self).__init__(LayerTypeEnum.TILEMAP)
+        self.animatedTilemaps = animatedTilemaps
 
-        self.renderQueue.clear()
-        self.camera.moveFlag = False
-        self.isRenderAll = False
-        #clear rendered tiles, stoed in tilemap now?
-
-        self.frameCount+=1
+class SpriteLayer(RenderLayer):
+    def __init__(self, characterSprites):
+        super(SpriteLayer, self).__init__(LayerTypeEnum.SPRITE)
+        self.characterSprites = characterSprites

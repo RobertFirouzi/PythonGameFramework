@@ -1,6 +1,7 @@
 from actors import SimpleBox, CharacterSprite, AnimationAccessory, AnimationPosition, AnimationState, SpriteAnimation, AccessoryPosition
 import pygame
 import parameters as PRAM
+from graphics import *
 
 #renderQ and visibleSection indexes
 LEFT_EDGE = 0
@@ -17,8 +18,83 @@ FROZE_ANIM = 0
 FORWARD_ANIM = 1
 REVERSE_ANIM = 2
 
-#renderMethods list populated by game depending on the needs of the currently loaded level/menu
 class Renderer:
+    def __init__(self, screen):
+        self.screen = screen
+
+        self.camera = None
+        self.renderLayers = None
+        self.isRenderAll = True
+        self.renderQueue = list()
+        self.frameCount = 0
+
+    def render(self):
+        if self.camera.moveFlag:
+            self.isRenderAll = True
+
+        self.updateAnimatedIndex()
+
+        if self.isRenderAll:
+            for layer in self.renderLayers:
+
+                if layer.layerType == LayerTypeEnum.PANORAMA:
+                    for panoramicImage in layer.panoramicImages:
+                        self.renderAllPanorama(panoramicImage.currentPanorama)
+
+                elif layer.layerType == LayerTypeEnum.TILEMAP:
+                    for tilemap in layer.animatedTilemaps:
+                        self.renderAllTiles(tilemap)
+
+                elif layer.layerType == LayerTypeEnum.SPRITE:
+                    self.renderAllActors(layer.characterSprites)
+        else:
+            for layer in self.renderLayers:
+
+                if layer.layerType == LayerTypeEnum.PANORAMA:
+                    for panoramicImage in layer.panoramicImages:
+                        self.renderChangedPanorama(panoramicImage.currentPanorama)
+
+                elif layer.layerType == LayerTypeEnum.TILEMAP:
+                    for tilemap in layer.animatedTilemaps:
+                        self.renderChangedTiles(tilemap)
+
+                elif layer.layerType == LayerTypeEnum.ACTOR:
+                    self.renderChangedActors(layer.characterSprites)
+
+        self.renderQueue.clear()
+        self.camera.moveFlag = False
+        self.isRenderAll = False
+        #clear rendered tiles, stored in tilemap now?
+
+        self.frameCount+=1
+
+    def updateAnimatedIndex(self):
+        pass
+
+    def renderAllPanorama(self, panorama):
+        pass
+
+    def renderChangedPanorama(self, panorama):
+        pass
+
+    def renderAllTiles(self, tilemap):
+        pass
+
+    def renderChangedTiles(self, tilemap):
+        pass
+
+    def renderAllActors(self, sprites):
+        pass
+
+    def renderChangedActors(self, sprites):
+        pass
+
+
+
+
+
+#renderMethods list populated by game depending on the needs of the currently loaded level/menu
+class Renderer_Deprecated:
     def __init__(self, screen):
         self.screen = screen
         
