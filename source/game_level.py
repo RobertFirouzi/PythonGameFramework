@@ -4,56 +4,163 @@ import json #to parse the lists in the DB
 from scenery import PanoramicImage, Tilemap
 
 
-class LevelDataFactory:
-    def __init__(self, levelIndex):
-        self.levelIndex = levelIndex
+class GameScene:
+    def __init__(self, sceneIndex):
+        self.sceneIndex = sceneIndex
 
+        self.name = ''
+        self.size_tiles = [10,10]
+        self.renderLayers = list()
+        self.borders = list()
+        self.eventTiles = list()
+        self.gameEvents = list()
+        self.actors = list()
 
-    def loadLevel(self):
+    def loadScene(self):
+        row = database.getLevelData(self.sceneIndex)
+        self.name = row[1]
+        self.size_tiles = (row[2], row[3])
 
+        self.loadBorders()
+        self.loadRenderLayers()
+        self.loadEventTiles()
+        self.loadGameEvents()
+        self.loadActors()
 
-        return LevelData
+    def loadRenderLayers(self):
+        # load tilemap data from the DB
+        row = database.getLevelData(self.sceneIndex)
+        lowerTiles = json.loads(row[4])  # unpack the strings into 2d lists
+        upperTiles = json.loads(row[5])
 
-    def loadName(self):
-        pass
+        tileMaps = database.getTileMaps(self.sceneIndex)  # expect lower, and upper as list
+        if tileMaps is None or len(tileMaps) != 2:
+            return False
+
+        if tileMaps[0][6] == 'lower':
+            lower = 0
+            upper = 1
+        else:
+            lower = 1
+            upper = 0
+
+        #TODO
+        self.lowerTileMap = Tilemap(tileMaps[lower][2],  # filepath
+                                    tileMaps[lower][3],  # tilesize_px
+                                    tileMaps[lower][4],  # height_tiles
+                                    tileMaps[0][5],  # width_tiles
+                                    lowerTiles,  # The mapping of each tile on the level to the iomage
+                                    tileMaps[lower][6],  # type
+                                    tileMaps[lower][7],  # alpha
+                                    tileMaps[lower][8],  # isAnimated
+                                    tileMaps[lower][9],  # animatedIndex
+                                    tileMaps[lower][10],  # Frames
+                                    tileMaps[lower][11])  # fps
+        #TODO
+        self.upperTileMap = Tilemap(tileMaps[upper][2],  # Filepath
+                                    tileMaps[upper][3],  # tilesize_px
+                                    tileMaps[upper][4],  # height_tiles
+                                    tileMaps[0][5],  # width_tiles
+                                    upperTiles,  # The mapping of each tile on the level to the iomage
+                                    tileMaps[upper][6],  # type
+                                    tileMaps[upper][7],  # alpha
+                                    tileMaps[upper][8],  # isAnimated
+                                    tileMaps[upper][9],  # animatedIndex
+                                    tileMaps[upper][10],  # Frames
+                                    tileMaps[upper][11])  # fps
+        #TODO
+        self.backgrounds = list()
+        backgrounds = database.getBackgrounds(self.sceneIndex)
+
+        for background in backgrounds:
+            visibleSections = json.loads(background[5])  # unpack the strings into 2d lists
+            for i in range(len(visibleSections)):  # change to tuple for speed
+                visibleSections[i] = tuple(visibleSections[i])
+            visibleSections = tuple(visibleSections)
+
+            scrolling = json.loads(background[6])
+            for i in range(len(scrolling)):  # change to tuple for speed
+                scrolling[i] = tuple(scrolling[i])
+            scrolling = tuple(scrolling)
+            # TODO
+            panoramicImage = PanoramicImage(background[2],  # filepath
+                                            (background[3], background[4]),  # size
+                                            visibleSections,
+                                            scrolling,
+                                            background[7],  # alpha
+                                            background[8],  # layer
+                                            background[9],  # isMotion_X TODO need to pull from DB
+                                            background[10],  # isMotion_Y
+                                            background[11],  # motionX_pxs
+                                            background[12],  # motionY_pxs
+                                            background[13],  # isAnimated
+                                            background[14],  # fps
+                                            background[15],  # numbImages
+                                            background[16])  # imageType
+
+            self.backgrounds.append(panoramicImage)
+        self.backgrounds = tuple(self.backgrounds)
+
+        # TODO
+        self.foregrounds = list()
+        foregrounds = database.getForegrounds(self.sceneIndex)
+
+        for foreground in foregrounds:
+            visibleSections = json.loads(foreground[5])  # unpack the strings into 2d lists
+            for i in range(len(visibleSections)):  # change to tuple for speed
+                visibleSections[i] = tuple(visibleSections[i])
+            visibleSections = tuple(visibleSections)
+
+            scrolling = json.loads(foreground[6])
+            for i in range(len(scrolling)):  # change to tuple for speed
+                scrolling[i] = tuple(scrolling[i])
+            scrolling = tuple(scrolling)
+            # TODO
+            panoramicImage = PanoramicImage(foreground[2],  # filepath
+                                            (foreground[3], foreground[4]),  # size
+                                            visibleSections,
+                                            scrolling,
+                                            foreground[7],  # alpha
+                                            foreground[8],  # layer
+                                            foreground[9],  # Motion_X
+                                            foreground[10],  # Motion_Y
+                                            foreground[11],  # motionX_pxs
+                                            foreground[12],  # motionY_pxs
+                                            foreground[13],  # isAnimated
+                                            foreground[14])  # fps
+
+            self.foregrounds.append(panoramicImage)
+
+        self.foregrounds = tuple(self.foregrounds)
+
 
     def loadBorders(self):
-        pass
+        row = database.getLevelData(self.sceneIndex)
+        self.name = row[1]
+        self.size_tiles = (row[2], row[3])
+        borders = json.loads(row[6]) #prefer this to be broken out, different table?
+        self.loadBorders()
 
-    def loadPanoramaLayer(self):
-        pass
+        for i in range(len(borders)):
+            borders[i] = tuple(borders[i])
+        self.borders = tuple(borders)
 
-    def loadTilemap(self):
-        pass
-
-    def loadActors(self):
+    def loadEventTiles(self):
         pass
 
     def loadGameEvents(self):
         pass
 
-    def loadLevelEvents(self):
+    def loadActors(self):
         pass
 
+    def addActor(self, actor):
+        self.actors = list(self.actors)
+        self.actors.append(actor)
+        self.actors = tuple(self.actors)
 
-class LevelData:
-    def __init__(self,
-                 name,
-                 size_tiles,
-                 renderLayers,
-                 borders,
-                 eventTiles,
-                 gameEvents,
-                 actors):
-        self.name = name
-        self.size_tiles = size_tiles
-        self.renderLayers = renderLayers
-        self.borders = borders
-        self.eventTiles = eventTiles
-        self.gameEvents = gameEvents
-        self.actors = actors
-
-
+    def loadImage(self, filepath, isAlpha):
+        pass
 
 class LevelData_Deprecated:
     def __init__(self,

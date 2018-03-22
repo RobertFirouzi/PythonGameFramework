@@ -1,25 +1,23 @@
 import parameters as PRAM
 import sys, importlib
-from game_level import LevelData, GameMenu, GameCutscene
+from game_level import GameScene, GameMenu, GameCutscene
 from event import EventLoadMenu, EventSetInput
 from debug import DebugLooper
 
 class Game:
     def __init__(self, player = None, 
                  musicPlayer = None, 
-                 soundPlayer = None, 
-                 renderer = None,
+                 soundPlayer = None,
+                 rendererManager = None,
                  gameCamera = None,
                  eventHandler = None):
         self.player = player
         self.musicPlayer = musicPlayer
         self.soundPlayer = soundPlayer
-        self.renderer = renderer
+        self.rendererManager = rendererManager
         self.eventHandler = eventHandler
         
         self.gameCamera = gameCamera
-        
-        #explicitly name Class fields
         self.gameEvents = [] 
         self.keydownEvents = []
         self.gameScene = None
@@ -32,23 +30,27 @@ class Game:
         self.addEvent(EventLoadMenu(PRAM.MENU_TEST1))
 #         self.addEvent(EventLoadLevel(PRAM.LEV_TEST1))
 
-    def loadLevel(self, eventLoadLevel):
+    def loadGameScene(self, eventLoadLevel):
         self.unloadScene()
 
         self.addEvent(EventSetInput(PRAM.INPTYPE_NORMAL))
-        self.levelData = LevelData()
-        self.levelData.loadLevel(eventLoadLevel.levelIndex)
-        self.levelData.addActor(self.player.actor) #add the player character to the level actors list
-        
+
+        self.gameScene = GameScene(eventLoadLevel.levelIndex)
+        self.gameScene.loadScene()
+        self.gameScene.addActor(self.player.actor)
+        self.rendererManager.renderLayers = self.gameScene.renderLayers
         self.player.setPosition(eventLoadLevel.startingPosition)
-        
+
         self.gameCamera.maxPosition = [  #TODO - may need to modify this to create a bounding box
             (self.levelData.size[0] - PRAM.DISPLAY_TILE_WIDTH)*PRAM.TILESIZE,
             (self.levelData.size[1] - PRAM.DISPLAY_TILE_HEIGHT)*PRAM.TILESIZE]
-        
-        self.renderer.loadAssets(self.levelData)
-        self.eventHandler.borders = self.levelData.borders
-        self.eventHandler.eventTiles = self.levelData.eventTiles
+
+        #self.levelData = LevelData()
+        # self.levelData.loadLevel(eventLoadLevel.levelIndex)
+        # self.levelData.addActor(self.player.actor) #add the player character to the level actors lis
+        # self.renderer.loadAssets(self.levelData)
+        self.eventHandler.borders = self.gameScene.borders
+        self.eventHandler.eventTiles = self.gameScene.eventTiles
 
        #TODO - add to the renderMethod lists based on the levelData
         #currently triggered on the tile

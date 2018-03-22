@@ -9,11 +9,6 @@ class AnimatedConditionEnum(Enum):
     MOVE_FORWARD = 1
     MOVE_BACKWARD = 2
 
-class LayerTypeEnum(Enum):
-    PANORAMA = 0
-    TILEMAP = 1
-    SPRITE = 2
-
 class DirectionEnum(Enum):
     DOWN = 0
     DOWN_LEFT = 1
@@ -39,16 +34,19 @@ class AccessoryCoordinates(SpriteCoordinates):
 class ScrollSpeed:
     def __init__(self, mult_x, div_x, mult_y, div_y):
         self.mult_x = mult_x
-        self.mult_x = mult_x
-        self.div_y = div_y
+        self.div_x = div_x
+        self.mult_y = mult_y
         self.div_y = div_y
 
-class Image:
-    def __init__(self, filepath, isAlpha):
-        self.filepath = filepath
-        self.isAlpha = isAlpha
-
-        self.imageData = None
+class ImageBuffer:
+    def __init__(self, imageData, screenX, screenY, cropX, cropY, width, height):
+        self.imageData = imageData
+        self.screenX = screenX
+        self.screenY = screenY
+        self.cropX = cropX
+        self.cropY = cropY
+        self.width = width
+        self.height = height
 
 class AnimationState:
     def __init__(self,
@@ -90,101 +88,95 @@ class AnimationState:
             return True
         return False
 
-#base class for any image class that needs to be rendered
-class Animated:
+class RenderableLayer:
+    def __init__(self, name, isNeedsSorting):
+        self.name = name
+        self.isNeedsSorting = isNeedsSorting
+
+    def updateAnimations(self):
+        return []
+
+    def genImageBufs(self, offsets, renderQ):
+        return []
+
+class PanoramaLayer(RenderableLayer):
     def __init__(self,
                  name,
+                 filepath,
+                 isAlpha,
+                 visibleSections,
+                 size,
                  fps,
-                 numFrames):
-        self.name = name
+                 numFrames,
+                 scrollSpeed,
+                 isMotion,
+                 motion_pps,
+                 isNeedsSorting = False):
+        super(PanoramaLayer, self).__init__(name, isNeedsSorting = isNeedsSorting)
+
+        self.filepath = filepath
+        self.isAlpha = isAlpha
+        self.visibleSections = visibleSections
+        self.size = size
         self.fps = fps
         self.numFrames = numFrames
-
-        self.fpi = round(GAME_FPS/fps,2)
-
-#For classes which have seperate images to create an animation
-class AnimatedSet(Animated):
-    def __init__(self,
-                 name,
-                 fps,
-                 numFrames,
-                 images):
-        super(AnimatedSet, self).__init__(name,fps,numFrames)
-        self.images = images
-
-#for classes which animate by using sections of one image
-class AnimatedImage(Animated):
-    def __init__(self,
-                 name,
-                 fps,
-                 numFrames,
-                 image):
-        super(AnimatedImage, self).__init__(name,fps,numFrames)
-        self.image = image
-
-class AnimatedPanorama(AnimatedSet): #TODO - documentation in scenery.py is good, ionclude it
-    def __init__(self,
-                 name,
-                 fps,
-                 numFrames,
-                 images,
-                 size,
-                 visibleSections,
-                 scrollSpeed,
-                 isMotion_X,
-                 isMotion_Y,
-                 motionX_pxs,
-                 motionY_pxs):
-        super(AnimatedPanorama, self).__init__(name,fps,numFrames,images)
-        self.size = size
-        self.visibleSections = visibleSections
         self.scrollSpeed = scrollSpeed
-        self.isMotion_X = isMotion_X
-        self.isMotion_Y = isMotion_Y
-        self.motionX_pxs = motionX_pxs
-        self.motionY_pxs = motionY_pxs
+        self.isMotion = isMotion
+        self.motion_pps = motion_pps
 
-
-        self.motion_x_multiplier = motionX_pxs/GAME_FPS
-        self.motion_y_multiplier = motionY_pxs/GAME_FPS
-
-        self.animationState = AnimationState()
+        self.panoramicImages = None
+        self.motionMultiplier = [motion_pps[0]/GAME_FPS, motion_pps[1]/GAME_FPS]
+        self.fpi = 1 #TODO where is this calculated?
+        self.motionOffset = [0,0]
+        self.animationState = AnimationState() #TODO, need fpi in here and in class?
         self.animationState.initialize(self.numFrames, self.fpi)
-        self.motionOffset_X = 0 #used to determine if re-render needed on render changed call
-        self.motionOffset_Y = 0
 
-    #increments the framecount and updates the animation and motion
-    def update(self):
+    def updateAnimations(self):
         isUpdated = self.animationState.updateAnimatedIndex()
-        if self.isMotion_X:
-            motionOffset = int(self.motion_x_multiplier * self.animationState.frameCount)
-            if motionOffset != self.motionOffset_X:  # panorama needs to move
-                self.motionOffset_X = motionOffset
+        if self.isMotion[0]:
+            motionOffset = int(self.motionMultiplier[0] * self.animationState.frameCount)
+            if motionOffset != self.motionOffset[0]:  # panorama needs to move
+                self.motionOffset[0] = motionOffset
                 isUpdated = True  # if panorama needs to scroll, re-render visibile sections
-        if self.isMotion_Y:
-            motionOffset = int(self.motion_y_multiplier * self.animationState.frameCount)
-            if motionOffset != self.motionOffset_Y:
-                self.motionOffset_Y = motionOffset
+        if self.isMotion[1]:
+            motionOffset = int(self.motionMultiplier[1] * self.animationState.frameCount)
+            if motionOffset != self.motionOffset[1]:
+                self.motionOffset[1] = motionOffset
                 isUpdated = True
-        return isUpdated
 
-class AnimatedTile(Animated):
+        if isUpdated:
+            return [] #TODO - return a render box here
+        return []
+
+class TilemapLayer(RenderableLayer):
     def __init__(self,
                  name,
-                 fps,
-                 numFrames,
-                 coordinates):  #list of locations on the tilemap image
-        super(AnimatedTile, self).__init__(name, fps, numFrames)
-        self.coordinates = coordinates #index into correct positon with frameIndex
+                 filepath,
+                 size_tiles,
+                 tileSize,
+                 isAlpha,
+                 animatedTiles,
+                 isNeedsSorting = False):
+        super(TilemapLayer, self).__init__(name, isNeedsSorting)
+        self.name = name
+        self.filepath = filepath
+        self.size_tiles = size_tiles
+        self.tileSize = tileSize
+        self.isAlpha = isAlpha
+        self.animatedTiles = animatedTiles
 
-        self.isChanged = False
-        self.animationState = AnimationState()
-        self.animationState.initialize(self.numFrames, self.fpi)
+        self.tilemapImage = None
+
+    def updateAnimations(self):
+        return []
+
+    def genImageBufs(self, offsets, renderQ):
+        return []
+
+    def tilemapIndexCoordinateConvert(self):
+        pass
 
 
-    def update(self):
-        self.isChanged = self.animationState.updateAnimatedIndex()
-        return self.isChanged
 
 class AnimatedAccessory(AnimatedImage):
     def __init__(self,
@@ -266,23 +258,3 @@ class CharacterSprite(Actor):
     def update(self):
         self.isChanged = self.animationState.updateAnimatedIndex()
         return self.isChanged
-
-
-class RenderLayer:
-    def __init__(self, layerType):
-        self.layerType = layerType
-
-class PanoramaLayer(RenderLayer):
-    def __init__(self, panoramicImage):
-        super(PanoramaLayer, self).__init__(LayerTypeEnum.PANORAMA)
-        self.panoramicImage = panoramicImage
-
-class TileLayer(RenderLayer):
-    def __init__(self, tilemap):
-        super(TileLayer, self).__init__(LayerTypeEnum.TILEMAP)
-        self.tilemaps = tilemap
-
-class SpriteLayer(RenderLayer):
-    def __init__(self, characterSprites):
-        super(SpriteLayer, self).__init__(LayerTypeEnum.SPRITE)
-        self.characterSprites = characterSprites

@@ -7,7 +7,7 @@ Created on Feb 24, 2017
 import pygame
 from parameters import *
 from setup import soundPlayerFactory, playerFactory, eventHandlerFactory
-from render import Renderer
+from render import RendererManager
 from game import Game
 from input import InputHandler, ButtonMap
 from camera import GameCamera
@@ -21,16 +21,16 @@ DONE = False
 
 ### GAME ENGINE ###
 musicPlayer, soundPlayer = soundPlayerFactory()
-renderer = Renderer(screen)
-gameCamera = GameCamera()
+camera = GameCamera()
+rendererManager = RendererManager(screen, camera)
+
 player = playerFactory()
-game = Game(player, musicPlayer, soundPlayer, renderer, gameCamera)
+game = Game(player, musicPlayer, soundPlayer, rendererManager, camera)
 inputHandler = InputHandler(game, player, ButtonMap())
 eventHandler = eventHandlerFactory(game)
-eventHandler.renderer = renderer 
+eventHandler.rendererManager = rendererManager #TODO revisit this relationship
 game.inputHandler = inputHandler
 game.eventHandler = eventHandler
-renderer.camera = gameCamera
 
 game.gameStartup()
 while not DONE:

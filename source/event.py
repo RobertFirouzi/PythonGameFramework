@@ -62,7 +62,7 @@ class EventHandler:
         self.eventDict = eventDict
         
         #explicit declaration of class fields
-        self.renderer = None
+        self.rendererManager = None
         self.borders = [] 
         self.eventTiles = {}
 
@@ -133,7 +133,7 @@ class EventHandler:
             self.game.gameCamera.panToChar(char.getPosition())
         
         if not self.game.gameCamera.moveFlag:
-            self.game.renderer.addRenderBox_movedSprite(char.getSize(), origin, char.getPosition(), event.direction)
+            self.rendererManager.addRenderBox_movedSprite(char.getSize(), origin, char.getPosition(), event.direction)
         
         if targetTile !=charTileRelative:  #Check if the targetTile tile has an event that triggers on touch
             targetTileTile = self.eventTiles.get((targetTile[1],targetTile[0]))

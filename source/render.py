@@ -18,101 +18,37 @@ FROZE_ANIM = 0
 FORWARD_ANIM = 1
 REVERSE_ANIM = 2
 
-class Renderer:
-    def __init__(self, screen):
+
+
+
+class RendererManager:
+    def __init__(self, screen, camera):
         self.screen = screen
+        self.camera = camera
 
-        self.camera = None
-        self.renderLayers = None
-        self.isRenderAll = True
-        self.renderQueue = list()
-        self.frameCount = 0
+        self.renderer = Renderer(screen)
+        self.renderQ = list()
+        self.renderLayers = list()
 
-    #call this when a new set of assets are loaded
-    def initialize(self): #TODO need to call this
+    def updateAnimations(self):
         pass
+
+    def addToRenderQ(self):
+        pass
+
+    def sortLayers(self, imageBuffers):
+        return imageBuffers
 
     def render(self):
-        if self.camera.moveFlag:
-            self.isRenderAll = True
+        imageBuffers = list()
+        #add render code, update the index and get the imageBuffers
+        self.renderer.render(self.screen, imageBuffers)
 
-        self.updateAnimatedIndex()
-
-        if self.isRenderAll:
-            for layer in self.renderLayers:
-
-                if layer.layerType == LayerTypeEnum.PANORAMA:
-                    self.renderAllPanorama(layer.panoramicImage.animatedPanorama)
-
-                elif layer.layerType == LayerTypeEnum.TILEMAP:
-                    self.renderAllTiles(layer.tilemap)
-
-                elif layer.layerType == LayerTypeEnum.SPRITE:
-                    self.renderAllActors(layer.characterSprites)
-        else:
-            for layer in self.renderLayers:
-
-                if layer.layerType == LayerTypeEnum.PANORAMA:
-                    self.renderChangedPanorama(layer.panoramicImage.animatedPanorama)
-
-                elif layer.layerType == LayerTypeEnum.TILEMAP:
-                    self.renderChangedTiles(layer.tilemap)
-
-                elif layer.layerType == LayerTypeEnum.ACTOR:
-                    self.renderChangedActors(layer.characterSprites)
-
-        self.renderQueue.clear()
-        self.camera.moveFlag = False
-        self.isRenderAll = False
-        #clear rendered tiles, stored in tilemap now?
-
-        self.frameCount+=1 #TODO needed?
-
-    def updateAnimatedIndex(self):
-        for layer in self.renderLayers:
-
-            if layer.layerType == LayerTypeEnum.PANORAMA:
-                isChanged = layer.panoramicImage.update()
-                if not self.isRenderAll and isChanged:
-                    self.addRenderBoxChangedPanorama(layer.panoramicImage.animatedPanorama)
-
-            if layer.layerType == LayerTypeEnum.TILEMAP:
-                for tile in layer.tilemap.animatedTiles:
-                    isChanged = tile.update()
-                    if not self.isRenderAll and isChanged:
-                        self.addRenderBoxChangedTile(tile)
-
-            if layer.layerType == LayerTypeEnum.SPRITE:
-                for sprite in layer.characterSprites:
-                    isChanged = sprite.update()
-                    if not self.isRenderAll and isChanged:
-                        self.addRenderBoxChangedSprite(sprite)
-
-    def addRenderBoxChangedPanorama(self, panorama):
+class Renderer:
+    def __init__(self):
         pass
 
-    def addRenderBoxChangedTile(self, tile):
-        pass
-
-    def addRenderBoxChangedSprite(self, sprite):
-        pass
-
-    def renderAllPanorama(self, panorama):
-        pass
-
-    def renderChangedPanorama(self, panorama):
-        pass
-
-    def renderAllTiles(self, tilemap):
-        pass
-
-    def renderChangedTiles(self, tilemap):
-        pass
-
-    def renderAllActors(self, sprites):
-        pass
-
-    def renderChangedActors(self, sprites):
+    def render(self,screen, imageBuffers):
         pass
 
 
