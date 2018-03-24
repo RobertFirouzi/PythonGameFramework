@@ -19,6 +19,17 @@ class DirectionEnum(Enum):
     RIGHT = 6
     RIGHT_DOWN = 7
 
+class RenderQBox:
+    def __init__(self, position, size):
+        self.position = position
+        self.size = size
+
+class CropPosition:
+    def __init__(self, position, size):
+        self.position = position
+        self.size = size
+
+
 #container class for coordinates of 1 frame of a sprite image
 class SpriteCoordinates:
     def __init__(self, start, size):
@@ -88,6 +99,93 @@ class AnimationState:
             return True
         return False
 
+class AnimatedTile:
+    def __init__(self,
+                 name,
+                 tilemapIndex,
+                 imageCoordinates,
+                 fps,
+                 numFrames):
+        self.name = name
+        self.tilemampIndex = tilemapIndex
+        self.imageCoordinates = imageCoordinates
+        self.fps = fps
+        self.numFrames = numFrames
+
+        self.fpi = 1 #TODO where calculated?
+        self.animationState = AnimationState()
+        self.isChanged = False
+
+    def currentImage(self):
+        return [] #CropPosition()
+
+    def updateAnimation(self):
+        pass #TODO update animation index
+        return [] #RenderQBox()TODO return render box
+
+class SpriteAccessory:
+    def __init__(self,
+                 name,
+                 filepath,
+                 accessoryCoordinates):
+        self.name = name
+        self.filepath = filepath
+        self.accessoryCoordinates = accessoryCoordinates
+
+        self.accessoryImage = None
+
+class AnimatedSprite:
+    def __init__(self,
+                 name,
+                 filepath,
+                 spriteCoordinates,
+                 fps,
+                 numFrames,
+                 animationAccessories):
+        self.name = name
+        self.filepath = filepath
+        self.spriteCoordinates = spriteCoordinates
+        self.fps = fps
+        self.numFrames = numFrames
+        self.animationAccessories = animationAccessories
+
+        self.spriteImage = None
+
+        self.fpi = 1 #TODO where calculated?
+
+    def curentImage(self, animationState, direction):
+        return [] #CropPosition() TODO return coordinates of image
+
+class Actor: #TODO note this is defined several spots, this should be most up to date, others deleted.
+    def __init__(self,
+                  name,
+                  size,
+                  isFocus,
+                  characterSprites,
+                  position,
+                  direction):
+        self.name = name
+        self.size = size
+        self.isFocus = isFocus
+        self.characterSprites = characterSprites
+        self.position = position
+        self.direction = direction
+
+        self.currentSprite = None
+        self.animationState = AnimationState()
+        self.isChanged = False
+
+    def updateAnimation(self):
+        isChanged = self.animationState.updateAnimatedIndex()
+        if isChanged: #TODO - return a render box
+            return []#RenderQBox()
+        else:
+            return []
+
+    def genImageBuf(self, offsets, renderQ):
+        return [] #ImageBuffer() TODO return the imageBuffer
+
+
 class RenderableLayer:
     def __init__(self, name, isNeedsSorting):
         self.name = name
@@ -113,7 +211,6 @@ class PanoramaLayer(RenderableLayer):
                  motion_pps,
                  isNeedsSorting = False):
         super(PanoramaLayer, self).__init__(name, isNeedsSorting = isNeedsSorting)
-
         self.filepath = filepath
         self.isAlpha = isAlpha
         self.visibleSections = visibleSections
@@ -145,8 +242,11 @@ class PanoramaLayer(RenderableLayer):
                 isUpdated = True
 
         if isUpdated:
-            return [] #TODO - return a render box here
+            return [] #RenderQBox() TODO - return a render box here
         return []
+
+    def genImageBufs(self, offsets, renderQ):
+        return [] #ImageBuffer() TODO return the imageBuffers
 
 class TilemapLayer(RenderableLayer):
     def __init__(self,
@@ -157,8 +257,7 @@ class TilemapLayer(RenderableLayer):
                  isAlpha,
                  animatedTiles,
                  isNeedsSorting = False):
-        super(TilemapLayer, self).__init__(name, isNeedsSorting)
-        self.name = name
+        super(TilemapLayer, self).__init__(name, isNeedsSorting = isNeedsSorting)
         self.filepath = filepath
         self.size_tiles = size_tiles
         self.tileSize = tileSize
@@ -168,93 +267,39 @@ class TilemapLayer(RenderableLayer):
         self.tilemapImage = None
 
     def updateAnimations(self):
-        return []
+        return [] #RenderQBox() TODO - return render boxes here
 
     def genImageBufs(self, offsets, renderQ):
-        return []
+        return [] #ImageBuffer() TODO return the imageBuffers
 
     def tilemapIndexCoordinateConvert(self):
-        pass
+        pass #TODO
 
-
-
-class AnimatedAccessory(AnimatedImage):
+class SpriteLayer(RenderableLayer):
     def __init__(self,
                  name,
-                 fps,
-                 numFrames,
-                 image,
-                 accessoryCoordinates):
-        super(AnimatedAccessory, self).__init__(name,fps,numFrames,image)
-        self.accessoryCoordinates = accessoryCoordinates
-
-class AnimatedSprite(AnimatedImage):
-    def __init__(self,
-                 name,
-                 fps,
-                 numFrames,
-                 image,
-                 spriteCoordinates,
-                 animationAccessories):
-        super(AnimatedSprite, self).__init__(name,fps,numFrames,image)
-        self.spriteCoordinates = spriteCoordinates
-        self.animationAccessories = animationAccessories
-
-
-#Base class to be inherited by any classes which are rendered to the target (screen)
-class Renderable:
-    def __init__(self):
-        pass
-
-class PanoramicImage(Renderable):
-    def __init__(self,
-                 animatedPanorama):
-        super(PanoramicImage, self).__init__()
-        self.animatedPanorama = animatedPanorama
-
-    def update(self):
-        return self.animatedPanorama.update()
-
-
-class Tilemap(Renderable):
-    def __init__(self,
-                 name,
-                 image,
-                 tileSize,
+                 filepath,
                  size_tiles,
-                 animatedTiles):
-        super(Tilemap, self).__init__()
-        self.name = name
-        self.image = image
-        self.tileSize = tileSize
+                 tileSize,
+                 isAlpha,
+                 animatedTiles,
+                 actors,
+                 isNeedsSorting = True):
+        super(SpriteLayer, self).__init__(name, isNeedsSorting = isNeedsSorting)
+        self.filepath = filepath
         self.size_tiles = size_tiles
+        self.tileSize = tileSize
+        self.isAlpha = isAlpha
         self.animatedTiles = animatedTiles
+        self.actors = actors
 
-class Actor(Renderable):
-    def __init__(self,
-                 name,
-                 size):
-        super(Actor, self).__init__()
-        self.name = name
-        self.size = size
+        self.tilemapImage = None
 
-        self.position = [0,0]
-        self.direction = DirectionEnum.DOWN
-        self.isFocus = False
-        self.isChanged = False
+    def updateAnimations(self):
+        return [] #RenderQBox()TODO - return render boxes here for tiles and actors
 
-class CharacterSprite(Actor):
-    def __init__(self,
-                 name,
-                 size,
-                 animatedSprites):
-        super(CharacterSprite, self).__init__(name,size)
-        self.animatedSprites = animatedSprites
+    def genImageBufs(self, offsets, renderQ):
+        return [] #ImageBuffer() TODO return the imageBuffers for tiles and actors
 
-        self.currentSprite = animatedSprites[0]
-        self.animationState = AnimationState()
-        self.animationState.initialize(self.currentSprite.numFrames, self.currentSprite.fpi)
-
-    def update(self):
-        self.isChanged = self.animationState.updateAnimatedIndex()
-        return self.isChanged
+    def tilemapIndexCoordinateConvert(self):
+        pass #TODO
