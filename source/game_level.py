@@ -2,10 +2,10 @@ import parameters as PRAM
 import database
 import json #to parse the lists in the DB
 from scenery import PanoramicImage, Tilemap
-
+from graphics import AnimatedTile, TilemapLayer, SpriteLayer
 
 class GameScene:
-    def __init__(self, sceneIndex):
+    def __init__(self, sceneIndex, resourceManager):
         self.sceneIndex = sceneIndex
 
         self.name = ''
@@ -15,6 +15,7 @@ class GameScene:
         self.eventTiles = list()
         self.gameEvents = list()
         self.actors = list()
+        self.resourceManager = resourceManager
 
     def loadScene(self):
         row = database.getLevelData(self.sceneIndex)
@@ -27,6 +28,8 @@ class GameScene:
         self.loadGameEvents()
         self.loadActors()
 
+    #TODO - will need to reorginize the database scehma
+    #TODO - switch to pure JSON files?  Probably easier for debugging
     def loadRenderLayers(self):
         # load tilemap data from the DB
         row = database.getLevelData(self.sceneIndex)
@@ -132,6 +135,58 @@ class GameScene:
             self.foregrounds.append(panoramicImage)
 
         self.foregrounds = tuple(self.foregrounds)
+
+    def loadTilemapLayer(self, jsonFile):
+        tilemapData = None #TODO load from JSON
+        animatedTiles = self.getAnimatedTiles(jsonFile)
+
+        tilemapLayer = TilemapLayer(tilemapData['name'],
+                                    tilemapData['filepath'],
+                                    tilemapData['size_tiles'],
+                                    tilemapData['tileSize'],
+                                    tilemapData['isAlpha'],
+                                    animatedTiles,
+                                    tilemapData['isNeedsSorting'])
+
+        tilemapLayer.tilemapImage = self.resourceManager.loadTilemap(tilemapData['filepath'])
+
+        self.renderLayers.append(tilemapLayer)
+
+    def getAnimatedTiles(self, jsonFile):
+        tilemap = None #TODO load from JSON here
+
+        animatedTiles = list()
+        for tile in tilemap['animatedTiles']:
+            animatedTile = None #TODO, load from JSON here
+            animatedTiles.append(AnimatedTile(animatedTile['name'],
+                                              animatedTile['tilemapIndex'],
+                                              animatedTile['imageCoordinates'],
+                                              animatedTile['fps'],
+                                              animatedTile['numFrames']))
+
+        return animatedTiles
+
+
+    def loadSpriteLayer(self, jsonFile, actors): #TODO need to pass in actors
+        spriteLayerData = None #TODO load from JSON here
+        animatedTiles = self.getAnimatedTiles(jsonFile)
+
+
+        spriteLayer = SpriteLayer(spriteLayerData['name'],
+                                  spriteLayerData['filepath'],
+                                  spriteLayerData['size_tiles'],
+                                  spriteLayerData['tileSize'],
+                                  spriteLayerData['isAlpha'],
+                                  animatedTiles,
+                                  actors,
+                                  spriteLayerData['isNeedsSorting'])
+
+        spriteLayer.tilemapImage = self.resourceManager.loadTilemap(spriteLayerData['filepath'])
+
+
+
+    def loadPanoramaLayer(self):
+        pass
 
 
     def loadBorders(self):

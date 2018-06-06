@@ -68,6 +68,10 @@ class EventHandler:
 
         self.events = list()
 
+
+    def addEvent(self, event):
+        self.events.append(event)
+
     # Runs all the events in the game event queue.  Events can return new events
     #     which are pushed on to the stack and immediately run (be careful of infinite loops!)
     def handleEvents(self):
@@ -199,7 +203,7 @@ class EventHandler:
         self.game.soundPlayer.playSound(event.sound)   
     
     def runSong(self, event):
-        self.game.musicPlayer.playSong(event.song)
+        self.game.musicHandler.playSong(event.song)
     
     def runSetInput(self, event):
         self.game.inputHandler.setInputBehavior(event.inputType)    

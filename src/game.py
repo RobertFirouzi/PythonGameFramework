@@ -4,6 +4,8 @@ from parameters import *
 from setup import eventHandlerFactory, playerFactory, soundPlayerFactory
 from input import InputHandler, ButtonMap
 
+#TODO - need to setup the JSON file to store level data
+
 class Camera:
     def __init__(self):
         pass
@@ -26,9 +28,19 @@ class Game:
         self.gameScene = None
         self.running = True
 
+    def loadLevel(self, level): #TODO load a level from JSON here
+        print('load level')
+
+    def loadMenu(self, menuFile):
+        self.unloadScene()
+
+    def addEvent(self, event):
+        self.eventHandler.addEvent(event)
+
+    def unloadScene(self):
+        pass
+
     def run(self):
-        #TODO - load the startup menu event here
-        pygame.init()
         flags = pygame.DOUBLEBUF | pygame.HWSURFACE
         self.screen = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT), flags)
         CLOCK = pygame.time.Clock()

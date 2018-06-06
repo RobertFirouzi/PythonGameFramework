@@ -136,7 +136,7 @@ class InputHandler:
         pass
 
     def menuAction(self):
-        self.game.addEvent(EventLoadLevel(3, [250,350])) #TODO temp code to test menu/level load
+        self.game.addEvent(EventLoadLevel(levelIndex=0, startingPosition = [250,350])) #TODO temp code to test menu/level load
     
     def menuCancel(self):
         pass
@@ -148,9 +148,12 @@ class InputHandler:
         self.game.runDebug = True
 
     def printPixelPosition(self, args):  #prints the coordinates of the mouse click
-        click_x = args[0]
-        click_y = args[1]
-        abs_x = click_x + self.game.gameCamera.tile[0]*PRAM.TILESIZE + self.game.gameCamera.offset[0]
-        abs_y = click_y + self.game.gameCamera.tile[1]*PRAM.TILESIZE + self.game.gameCamera.offset[1]
-        print('\nRelative: ('+str(click_x)+','+str(click_y)+')')
-        print('Absolute: ('+str(abs_x)+','+str(abs_y )+')')
+        try:
+            click_x = args[0]
+            click_y = args[1]
+            abs_x = click_x + self.game.gameCamera.tile[0]*PRAM.TILESIZE + self.game.gameCamera.offset[0]
+            abs_y = click_y + self.game.gameCamera.tile[1]*PRAM.TILESIZE + self.game.gameCamera.offset[1]
+            print('\nRelative: ('+str(click_x)+','+str(click_y)+')')
+            print('Absolute: ('+str(abs_x)+','+str(abs_y )+')')
+        except:
+            pass

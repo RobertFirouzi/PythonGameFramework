@@ -5,17 +5,20 @@ from event import EventLoadMenu, EventSetInput
 from debug import DebugLooper
 
 class Game:
-    def __init__(self, player = None, 
+    def __init__(self,
+                 player = None,
                  musicPlayer = None, 
                  soundPlayer = None,
                  rendererManager = None,
                  gameCamera = None,
-                 eventHandler = None):
+                 eventHandler = None,
+                 resourceManager = None):
         self.player = player
         self.musicPlayer = musicPlayer
         self.soundPlayer = soundPlayer
         self.rendererManager = rendererManager
         self.eventHandler = eventHandler
+        self.resourceManager = resourceManager
         
         self.gameCamera = gameCamera
         self.gameEvents = [] 
@@ -35,9 +38,9 @@ class Game:
 
         self.addEvent(EventSetInput(PRAM.INPTYPE_NORMAL))
 
-        self.gameScene = GameScene(eventLoadLevel.levelIndex)
+        self.gameScene = GameScene(eventLoadLevel.levelIndex, self.resourceManager)
         self.gameScene.loadScene()
-        self.gameScene.addActor(self.player.actor)
+        self.gameScene.addActor(self.player.actor) #TODO - stored in resourceManager
         self.rendererManager.renderLayers = self.gameScene.renderLayers
         self.player.setPosition(eventLoadLevel.startingPosition)
 
@@ -49,7 +52,7 @@ class Game:
         # self.levelData.loadLevel(eventLoadLevel.levelIndex)
         # self.levelData.addActor(self.player.actor) #add the player character to the level actors lis
         # self.renderer.loadAssets(self.levelData)
-        self.eventHandler.borders = self.gameScene.borders
+        self.eventHandler.borders = self.gameScene.borders #TODO - like this?
         self.eventHandler.eventTiles = self.gameScene.eventTiles
 
        #TODO - add to the renderMethod lists based on the levelData
@@ -88,7 +91,7 @@ class Game:
         self.gameScene = GameCutscene(cutscene) 
 
     def render(self):
-        self.renderer.render()
+        self.rendererManager.render()
 
     # Halt any running events, unload any assets, etc
     def unloadScene(self):
@@ -103,3 +106,27 @@ class Game:
         self.runDebug = False
         debugLooper = DebugLooper(self)
         debugLooper.start()
+
+class ResourceManager:
+    def __init__(self):
+        self.animatedSprites = dict()
+        self.tilemaps = dict()
+        self.panoramas = dict()
+        self.actors = dict()
+        self.musicTracks = dict()
+        self.soundEffects = dict()
+        self.ambientTracks = dict()
+
+    #stores images in a dict 'filepath' : returns ref to the image
+    def loadAnimatedSprite(self, animatedSprite):
+        pass
+
+    def loadSpriteAccessory(self, spriteAccessory):
+        pass
+
+    def loadPanorama(self, panoramaLayer):
+        pass
+
+    def loadTilemap(self, tilemapLayer):
+        pass
+
