@@ -3,14 +3,12 @@ from render import RenderManager
 from parameters import *
 from setup import eventHandlerFactory, playerFactory, soundPlayerFactory
 from input import InputHandler, ButtonMap
-
-#TODO - need to setup the JSON file to store level data
+from resource import ResourceManager
+from scene import Scene
+from json_inout import LevelLoader
+from graphics import AnimatedTile, PanoramaLayer, TilemapLayer, SpriteLayer
 
 class Camera:
-    def __init__(self):
-        pass
-
-class ResourceManager:
     def __init__(self):
         pass
 
@@ -19,17 +17,96 @@ class Game:
         self.player = playerFactory()
         self.renderManager = RenderManager()
         self.resourceManager = ResourceManager()
+        self.levelLoader = None
         self.eventHandler = eventHandlerFactory(self)
         self.inputHandler = InputHandler(self, self.player, ButtonMap())
         self.musicHandler, self.soundEffectHandler = soundPlayerFactory()
         self.camera = Camera
 
         self.screen = None
-        self.gameScene = None
+        self.scene = None
         self.running = True
 
-    def loadLevel(self, level): #TODO load a level from JSON here
-        print('load level')
+    def loadLevel(self, eventLoadLevel):
+        self.unloadScene()
+        self.levelLoader = LevelLoader(eventLoadLevel.levelIndex)
+        levelData = self.levelLoader.loadLevelData()
+        renderLayerDatas = self.levelLoader.loadRenderLayers()
+
+        renderLayers = list()
+        for layer in renderLayerDatas:
+            if layer['layerType'] == 'panorama':
+                panoramaImagePaths = self.levelLoader.loadPanoramicImagePaths(layer['id'])
+                panoramicImages = list()
+                for imagePath in panoramaImagePaths:
+                    panoramicImages = self.resourceManager.loadPanorama(imagePath, layer['isAlpha'])
+
+                panoramicLayer = PanoramaLayer(layer['name'],
+                                               layer['isNeedsSorting'],
+                                               panoramicImages,
+                                               layer['visibleSections'],
+                                               layer['sizePx'],
+                                               layer['scrollSpeed'],
+                                               layer['fps'],
+                                               layer['isMotion'],
+                                               layer['motion_pps'])
+
+                renderLayers.append(panoramicLayer)
+
+
+
+            elif layer['layerType'] == 'tilemap' or layer['layerType'] == 'sprite':
+                tileImagePath = self.levelLoader.loadTileImagePath(layer['id'])
+                tileData = self.levelLoader.loadTilemapData(layer['id'])
+
+                animatedTiles = list()
+                for i in range(len(tileData)):
+                    tileRow = list()
+                    for j in range(len(tileData[i])):
+                        animatedTile = AnimatedTile(tileData[i][j]['index'],tileData[i][j]['fps'])
+                        tileRow.append(animatedTile)
+                    animatedTiles.append(tileRow)
+
+                if tileImagePath:
+                    tilemapImage = self.resourceManager.loadTilemap(tileImagePath, layer['isAlpha'])
+
+                #TODO - loadActors
+                if layer['layerType'] == 'tilemap':
+                    tilemapLayer = TilemapLayer(layer['name'],
+                                                layer['isNeedsSorting'],
+                                                layer['size_tiles'],
+                                                layer['tileSize'],
+                                                layer['tilemapImage'],
+                                                layer['animatedTiles'])
+
+                    renderLayers.append(tilemapLayer)
+
+                elif layer['layerType'] == 'sprite':
+                    spriteLayer = SpriteLayer(layer['name'],
+                                              layer['isNeedsSorting'],
+                                              layer['size_tiles'],
+                                              layer['tileSize'],
+                                              layer['tilemapImage'],
+                                              layer['animatedTiles'],
+                                              list())
+
+                    renderLayers.append(spriteLayer)
+
+        borderData = self.levelLoader.loadBorders() #{layerIndex : [[border]]}
+
+        self.scene = Scene(levelData['name'],
+                           levelData['id'],
+                           levelData['size_tiles'],
+                           renderLayers,
+                           borderData,
+                           list(), #TODO eventBoxes
+                           list(), #TODO game evenets
+                           list()) #TODO actors
+
+        print('debug to here')
+        #TODO - pass render layers to rendermanager
+        #TODO - debug through and verify loading of all data
+
 
     def loadMenu(self, menuFile):
         self.unloadScene()
