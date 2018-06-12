@@ -133,7 +133,7 @@ class LevelLoader:
         renderLayers = list()
 
         for file in files:
-            fp = open(file, 'r')
+            fp = open(directory+file, 'r')
             renderLayers.append(json.load(fp))
             fp.close()
 
@@ -163,7 +163,7 @@ class LevelLoader:
         tileImagePath = ''
 
         for file in files:
-            index = int(file.replace('.json',''))
+            index = int(file.split('.')[0]) #split of extension and convert to an id int
             if index == id:
                 tileImagePath = directory+file
                 break
@@ -197,3 +197,69 @@ class LevelLoader:
             borderData[index] = border
 
         return borderData
+
+'''
+dir_actors/
+    000000.json
+    000001.json 
+    etc
+
+dir_sprites/
+    000000/
+        sprite_data.json
+        img.jpg
+        accessories/
+            000000.json #describes placment of accessory images of corresponding id
+            000008.json #note that an accessory can be associated with multiple base sprites
+                        #but doesn't have to be with all.  Perhaps there are multiple accessory images of a sword
+                        #one in a positon for the character to hold while walking,running, jumping, etc
+                        #another one that is designed for an attack animation 
+            etc
+    000001/
+        sprite_data
+        img.jpg
+        accessories/
+            000002.json #describes placment of accessory images of corresponding id
+            000010.json
+            etc
+dir_accessories/
+    000000/
+        accessory_data.json
+        img.png
+    000001/
+        accessory_data.json
+        img.png
+    etc
+
+        
+
+actor json
+"id" : <int>,
+"name" : <string>,
+"size" : <list[width, height]>
+"sprites" : dict{'type' : [id]} eg 'walk' : 1, 
+"accessories" : list(id's)
+(much more data for an actor to be added)
+
+
+sprite data json
+"id" : <int>,
+"name" : <string>,
+"coordinates" : <dict{'up' : [[0,0,10,20], [10,0,10,20] ... 'down' : [[.......}  #lists all directions, and the coordinates of each frame
+"fps" : int
+
+accessory json (within sprites)
+"id" : <int>,
+"coordinates" : <dict{'up' : [[0,0], [10,0] ... 'down' : [[.......}  #lists all directions, just the starting coordinates of each frame (rest of coords in acc data)
+
+
+accessory data json
+"id" : <int>
+"name" : <string>
+"coordinates" : <dict{'up' : [[0,0,10,20], [10,0,10,20] ... 'down' : [[.......}  #lists all directions, and the coordinates of each frame
+
+'''
+
+class SpriteLoader:
+    def __init__(self):
+        pass

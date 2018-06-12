@@ -7,6 +7,10 @@ from resource import ResourceManager
 from scene import Scene
 from json_inout import LevelLoader
 from graphics import AnimatedTile, PanoramaLayer, TilemapLayer, SpriteLayer
+from event import EventSetInput
+
+#TODO - need to load sprites, apply accessory, pass to resource manager
+#TODO - need to load actors, pass to resource manager, add to level
 
 class Camera:
     def __init__(self):
@@ -17,7 +21,7 @@ class Game:
         self.player = playerFactory()
         self.renderManager = RenderManager()
         self.resourceManager = ResourceManager()
-        self.levelLoader = None
+        self.levelLoader = None #TODO - make one class to load all resources, not just levels (actors, etc)
         self.eventHandler = eventHandlerFactory(self)
         self.inputHandler = InputHandler(self, self.player, ButtonMap())
         self.musicHandler, self.soundEffectHandler = soundPlayerFactory()
@@ -29,6 +33,7 @@ class Game:
 
     def loadLevel(self, eventLoadLevel):
         self.unloadScene()
+        self.addEvent(EventSetInput(INPTYPE_NORMAL))
         self.levelLoader = LevelLoader(eventLoadLevel.levelIndex)
         levelData = self.levelLoader.loadLevelData()
         renderLayerDatas = self.levelLoader.loadRenderLayers()
@@ -39,7 +44,7 @@ class Game:
                 panoramaImagePaths = self.levelLoader.loadPanoramicImagePaths(layer['id'])
                 panoramicImages = list()
                 for imagePath in panoramaImagePaths:
-                    panoramicImages = self.resourceManager.loadPanorama(imagePath, layer['isAlpha'])
+                    panoramicImages.append(self.resourceManager.loadPanorama(imagePath, layer['isAlpha']))
 
                 panoramicLayer = PanoramaLayer(layer['name'],
                                                layer['isNeedsSorting'],
@@ -67,6 +72,7 @@ class Game:
                         tileRow.append(animatedTile)
                     animatedTiles.append(tileRow)
 
+                tilemapImage = None
                 if tileImagePath:
                     tilemapImage = self.resourceManager.loadTilemap(tileImagePath, layer['isAlpha'])
 
@@ -75,9 +81,9 @@ class Game:
                     tilemapLayer = TilemapLayer(layer['name'],
                                                 layer['isNeedsSorting'],
                                                 layer['size_tiles'],
-                                                layer['tileSize'],
-                                                layer['tilemapImage'],
-                                                layer['animatedTiles'])
+                                                layer['tile_size'],
+                                                tilemapImage,
+                                                animatedTiles)
 
                     renderLayers.append(tilemapLayer)
 
@@ -85,9 +91,9 @@ class Game:
                     spriteLayer = SpriteLayer(layer['name'],
                                               layer['isNeedsSorting'],
                                               layer['size_tiles'],
-                                              layer['tileSize'],
-                                              layer['tilemapImage'],
-                                              layer['animatedTiles'],
+                                              layer['tile_size'],
+                                              tilemapImage,
+                                              animatedTiles,
                                               list())
 
                     renderLayers.append(spriteLayer)
@@ -103,9 +109,8 @@ class Game:
                            list(), #TODO game evenets
                            list()) #TODO actors
 
-        print('debug to here')
         #TODO - pass render layers to rendermanager
-        #TODO - debug through and verify loading of all data
+        #TODO - verify git repo
 
 
     def loadMenu(self, menuFile):

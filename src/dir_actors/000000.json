@@ -1,0 +1,5 @@
+{"id" : 0, 
+"name" : "Hero", 
+"size" : [48,96],
+"sprites" : {"walk" : 0, "run" : 1},
+"accessories" : [0,1,2]}
