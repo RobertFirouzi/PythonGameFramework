@@ -85,8 +85,6 @@ COLOR_BLUE = (0, 128, 255)
 COLOR_ORANGE = (255, 100, 0)
 COLOR_GREEN = (100, 255, 0)
 
-
-
 ### IMAGES ###
 IMAGE_LIBRARY = ['ball.png'] #may not be needed
 

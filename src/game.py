@@ -5,13 +5,13 @@ from setup import eventHandlerFactory, playerFactory, soundPlayerFactory
 from input import InputHandler, ButtonMap
 from resource import ResourceManager
 from scene import Scene
-from json_inout import LevelLoader
-from graphics import AnimatedTile, PanoramaLayer, TilemapLayer, SpriteLayer
+from database import DataLoader
+from graphics import AnimatedTile, PanoramaLayer, TilemapLayer, SpriteLayer, Sprite, Accessory
 from event import EventSetInput
 
 #TODO - need to load sprites, apply accessory, pass to resource manager
 #TODO - need to load actors, pass to resource manager, add to level
-
+#TODO - get rid of renderBox classes, - just use common format of [x, y, width height]
 class Camera:
     def __init__(self):
         pass
@@ -21,7 +21,7 @@ class Game:
         self.player = playerFactory()
         self.renderManager = RenderManager()
         self.resourceManager = ResourceManager()
-        self.levelLoader = None #TODO - make one class to load all resources, not just levels (actors, etc)
+        self.dataLoader = DataLoader()
         self.eventHandler = eventHandlerFactory(self)
         self.inputHandler = InputHandler(self, self.player, ButtonMap())
         self.musicHandler, self.soundEffectHandler = soundPlayerFactory()
@@ -31,17 +31,17 @@ class Game:
         self.scene = None
         self.running = True
 
-    def loadLevel(self, eventLoadLevel):
+    def loadScene(self, eventLoadScene):
         self.unloadScene()
         self.addEvent(EventSetInput(INPTYPE_NORMAL))
-        self.levelLoader = LevelLoader(eventLoadLevel.levelIndex)
-        levelData = self.levelLoader.loadLevelData()
-        renderLayerDatas = self.levelLoader.loadRenderLayers()
+        self.dataLoader.setLevelId(eventLoadScene.levelIndex)
+        levelData = self.dataLoader.loadLevelData()
+        renderLayerDatas = self.dataLoader.loadRenderLayers()
 
         renderLayers = list()
         for layer in renderLayerDatas:
             if layer['layerType'] == 'panorama':
-                panoramaImagePaths = self.levelLoader.loadPanoramicImagePaths(layer['id'])
+                panoramaImagePaths = self.dataLoader.loadPanoramicImagePaths(layer['id'])
                 panoramicImages = list()
                 for imagePath in panoramaImagePaths:
                     panoramicImages.append(self.resourceManager.loadPanorama(imagePath, layer['isAlpha']))
@@ -61,8 +61,8 @@ class Game:
 
 
             elif layer['layerType'] == 'tilemap' or layer['layerType'] == 'sprite':
-                tileImagePath = self.levelLoader.loadTileImagePath(layer['id'])
-                tileData = self.levelLoader.loadTilemapData(layer['id'])
+                tileImagePath = self.dataLoader.loadTileImagePath(layer['id'])
+                tileData = self.dataLoader.loadTilemapData(layer['id'])
 
                 animatedTiles = list()
                 for i in range(len(tileData)):
@@ -98,7 +98,7 @@ class Game:
 
                     renderLayers.append(spriteLayer)
 
-        borderData = self.levelLoader.loadBorders() #{layerIndex : [[border]]}
+        borderData = self.dataLoader.loadBorders() #{layerIndex : [[border]]}
 
         self.scene = Scene(levelData['name'],
                            levelData['id'],
@@ -113,6 +113,42 @@ class Game:
         #TODO - verify git repo
 
 
+    def addActor(self, actorId, location = (0,0), direction = 0, isFocus = False):
+        #TODO Note: check to see if loaded in resource manager first?
+        actorData = self.dataLoader.loadActorData(actorId)
+        sprites =dict()
+
+        accessoryDatas = list()
+        for accessoryId in actorData['accessories']:
+            accessoryDatas.append(self.dataLoader.loadAccessoryData(accessoryId))
+
+        for key, value in actorData['sprites']:
+            spriteData = self.dataLoader.loadSpriteData(value)
+            accessories = list() #to contain the objects
+            for accessoryData in accessoryDatas:
+                positionData = self.dataLoader.loadAccessoryPositionData(spriteData['id'], accessoryData['id'])
+                accessories.append(Accessory(accessoryData['id'],
+                                             accessoryData['name'],
+                                             accessoryData['coordinates'],
+                                             positionData['coordinates']))
+
+            sprites[key] = Sprite(spriteData['id'],
+                                  spriteData['name'],
+                                  spriteData['coordinates'],
+                                  accessories,
+                                  spriteData['fps'])
+
+            sprites[key].img = self.resourceManager.loadSprite('filepath wont work for this')
+            #TODO load the sprite and accessory filenames, use resource to load the image, figure out how to combine the image
+                #and return the combined image back to sprite.  All loaded sprites, accessores, and combined images stored by resource manager
+
+
+
+
+
+
+
+
     def loadMenu(self, menuFile):
         self.unloadScene()
 
@@ -120,6 +156,9 @@ class Game:
         self.eventHandler.addEvent(event)
 
     def unloadScene(self):
+        pass
+
+    def render(self):
         pass
 
     def run(self):

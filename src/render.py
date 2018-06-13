@@ -4,3 +4,7 @@ class RenderManager:
 
     def render(self):
         pass
+
+class Renderer:
+    def __init__(self):
+        pass

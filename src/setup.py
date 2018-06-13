@@ -1,5 +1,5 @@
 from sound import MusicPlayer, SoundEffectPlayer, SoundWrapper
-from player_character import PlayerCharacter
+from character import PlayerCharacter
 from actions import ActionColorSwap, ActionMove
 from event import EventHandler
 import parameters as PRAM

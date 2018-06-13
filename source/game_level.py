@@ -148,7 +148,7 @@ class GameScene:
                                     animatedTiles,
                                     tilemapData['isNeedsSorting'])
 
-        tilemapLayer.tilemapImage = self.resourceManager.loadTilemap(tilemapData['filepath'])
+        tilemapLayer.img = self.resourceManager.loadTilemap(tilemapData['filepath'])
 
         self.renderLayers.append(tilemapLayer)
 
@@ -181,7 +181,7 @@ class GameScene:
                                   actors,
                                   spriteLayerData['isNeedsSorting'])
 
-        spriteLayer.tilemapImage = self.resourceManager.loadTilemap(spriteLayerData['filepath'])
+        spriteLayer.img = self.resourceManager.loadTilemap(spriteLayerData['filepath'])
 
 
 

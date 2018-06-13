@@ -1,9 +1,12 @@
 import pygame
+import hashlib
+#TODO - hash the filenames to lookup in dict?
 
 class ResourceManager:
     def __init__(self):
         self.spriteImages = dict()
         self.spriteAccessories = dict()
+        self.combinedSprites = dict()
         self.tilemapImages = dict()
         self.panoramaImages = dict()
         self.actors = dict()
@@ -34,5 +37,11 @@ class ResourceManager:
     def loadSprite(self, filepath):
         pass
 
-    def loadspriteAccessories(self, filepath):
+    def loadAccessory(self, filepath):
+        pass
+
+    #keeps track of combined sprite images
+    #need to think of which object should perform the combonation of the sprite image
+    #usea MD5 hash as a lookup for the combined filepaths of sprite+accessorys
+    def loadCombinedSprite(self, sprite, spriteFilepath, accessory, accessoryFilepaths):
         pass

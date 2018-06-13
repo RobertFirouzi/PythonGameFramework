@@ -1,5 +1,5 @@
 from sound import MusicPlayer, SoundEffectPlayer, SoundWrapper
-from player_character import PlayerCharacter
+from character import PlayerCharacter
 from actions import ActionColorSwap, ActionMove
 from actors import SimpleBox
 from event import EventHandler

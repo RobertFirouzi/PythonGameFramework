@@ -203,7 +203,7 @@ class EventHandler:
         self.game.inputHandler.setInputBehavior(event.inputType)    
     
     def runLoadLevel(self, event):
-        self.game.loadLevel(event)          
+        self.game.loadScene(event)
 
     def runLoadMenu(self, event):
         self.game.loadMenu(event.menuFile)

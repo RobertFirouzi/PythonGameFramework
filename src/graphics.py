@@ -22,7 +22,7 @@ class PanoramaLayer(RenderableLayer):
     def __init__(self,
                  name,
                  isNeedsSorting, #if the layer has sprites which need to be rendered in order
-                 panoramicImages,
+                 images,
                  visibleSections,
                  sizePx,
                  scrollSpeed,
@@ -30,7 +30,7 @@ class PanoramaLayer(RenderableLayer):
                  isMotion,
                  motion_pps):
         super(PanoramaLayer, self).__init__(name, isNeedsSorting)
-        self.panoramicImages = panoramicImages
+        self.images = images
         self.visibleSections = visibleSections
         self.sizePx = sizePx
         self.scrollSpeed = scrollSpeed
@@ -38,7 +38,7 @@ class PanoramaLayer(RenderableLayer):
         self.isMotion = isMotion
         self.motion_pps = motion_pps
 
-        self.numFrames = len(panoramicImages)
+        self.numFrames = len(images)
         self.fpi = 0 #TODO - calc based on fps
         self.motionMultiplier = 0 #TODO calc
         self.motionOffset = 0
@@ -50,15 +50,15 @@ class TilemapLayer(RenderableLayer):
                  isNeedsSorting,
                  size_tiles,
                  tileSize,
-                 tilemapImage,
+                 img,
                  animatedTiles):
         super(TilemapLayer, self).__init__(name, isNeedsSorting)
         self.size_tiles = size_tiles
         self.tileSize = tileSize
-        self.tilemapImage = tilemapImage
+        self.img = img
         self.animatedTiles = animatedTiles
 
-    def tilemapIndexCoordinateConvert(self): #TODO
+    def tilemapIndexCoordinateConvert(self):
         pass
 
 class SpriteLayer(TilemapLayer):
@@ -67,8 +67,46 @@ class SpriteLayer(TilemapLayer):
                  isNeedsSorting,
                  size_tiles,
                  tileSize,
-                 tilemapImage,
+                 img,
                  animatedTiles,
                  actors):
-        super(SpriteLayer, self).__init__(name, isNeedsSorting, size_tiles, tileSize, tilemapImage, animatedTiles)
+        super(SpriteLayer, self).__init__(name, isNeedsSorting, size_tiles, tileSize, img, animatedTiles)
         self.actors = actors
+
+class Sprite:
+    def __init__(self,
+                 id,
+                 name,
+                 spriteBoxes,
+                 accessories,
+                 fps):
+        self.id = id
+        self.name = name
+        self.spriteBoxes = spriteBoxes
+        self.accessories = accessories
+        self.fps = fps
+
+        self.img = None
+        self.numFrames = len(next(iter(spriteBoxes.values()))) #this gets the number of items in the lest = numb frames
+
+
+    def currentImg(self, animationState, direction):
+        pass
+
+class Accessory:
+    def __init__(self,
+                 id,
+                 name,
+                 spriteBoxes,
+                 relativeStarts):
+        self.id = id
+        self.name = name
+        self.spriteBoxes = spriteBoxes
+        self.relativeStarts = relativeStarts
+
+        self.img = None
+
+
+
+
+
