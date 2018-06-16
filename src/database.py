@@ -204,6 +204,7 @@ class DataLoader:
 
         return renderLayers
 
+    #TODO - the image files need their own directory outside of the level directory!
     def loadPanoramicImagePaths(self, id): #returns the list of panorama paths for the layer id
         if id<10:
             directory = self.levelPath + 'panorama\\00'+str(id)+'\\'
@@ -220,7 +221,7 @@ class DataLoader:
 
         return imagePaths
 
-
+    #TODO - the image files need their own directory outside of the level directory!
     def loadTileImagePath(self, id): #returns an empty string or the path to tilemap image
         directory = self.levelPath + 'tilemap\\'
         files = os.listdir(directory)
@@ -233,6 +234,50 @@ class DataLoader:
                 break
 
         return tileImagePath
+
+    def loadSpriteImagePath(self, id): #returns an empty string or the path to tilemap image
+        directory = 'dir_sprites\\'
+
+        if id<10:
+            spriteImageDirectory = directory+'00000'+str(id)+'\\'
+        elif id<100:
+            spriteImageDirectory = directory+'0000'+str(id)+'\\'
+        elif id<1000:
+            spriteImageDirectory = directory+'000'+str(id)+'\\'
+        elif id<10000:
+            spriteImageDirectory = directory+'00'+str(id)+'\\'
+        elif id<100000:
+            spriteImageDirectory = directory+'0'+str(id)+'\\'
+        else:
+            spriteImageDirectory = directory+str(id)+'\\'
+
+        files = os.listdir(spriteImageDirectory)
+
+        for file in files:
+            if file.split('.')[0] == 'img':
+                return spriteImageDirectory+file
+
+    def loadAccessoryImagePath(self, id): #returns an empty string or the path to tilemap image
+        directory = 'dir_accessory\\'
+
+        if id<10:
+            accessoryImageDirectory = directory+'00000'+str(id)+'\\'
+        elif id<100:
+            accessoryImageDirectory = directory+'0000'+str(id)+'\\'
+        elif id<1000:
+            accessoryImageDirectory = directory+'000'+str(id)+'\\'
+        elif id<10000:
+            accessoryImageDirectory = directory+'00'+str(id)+'\\'
+        elif id<100000:
+            accessoryImageDirectory = directory+'0'+str(id)+'\\'
+        else:
+            accessoryImageDirectory = directory+str(id)+'\\'
+
+        files = os.listdir(accessoryImageDirectory)
+
+        for file in files:
+            if file.split('.')[0] == 'img':
+                return accessoryImageDirectory+file
 
     def loadTilemapData(self, id): #returns the array of tileData (used for animatedTile objects)
         directory = self.levelPath + 'tiles\\'

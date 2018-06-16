@@ -79,11 +79,13 @@ class Sprite:
                  name,
                  spriteBoxes,
                  accessories,
+                 baseImage,
                  fps):
         self.id = id
         self.name = name
         self.spriteBoxes = spriteBoxes
         self.accessories = accessories
+        self.baseImage = baseImage
         self.fps = fps
 
         self.img = None
@@ -93,18 +95,25 @@ class Sprite:
     def currentImg(self, animationState, direction):
         pass
 
+    def getSpriteHash(self): #creates a unique string for this set of sprite/accessory combo
+        spriteHash = str(self.id)
+        for accessory in self.accessories:
+            spriteHash += '_' + str(accessory.id)
+
+        return spriteHash
+
 class Accessory:
     def __init__(self,
                  id,
                  name,
                  spriteBoxes,
-                 relativeStarts):
+                 relativeStarts,
+                 img):
         self.id = id
         self.name = name
         self.spriteBoxes = spriteBoxes
         self.relativeStarts = relativeStarts
-
-        self.img = None
+        self.img = img
 
 
 

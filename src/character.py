@@ -5,7 +5,6 @@ class Actor:
                  id,
                  name,
                  sprites,
-                 accessories,
                  size = (0,0),
                  position = (0,0),
                  direction = 0,
@@ -13,7 +12,6 @@ class Actor:
         self.id = id
         self.name = name
         self.sprites = sprites
-        self.accessories = accessories
         self.size = size
         self.position = position
         self.direction = direction
@@ -28,6 +26,13 @@ class Actor:
 
     def genImageBuf(self, offsets, renderQ):
         pass
+
+    def generateSpriteLayers(self, sprite):
+        pass
+
+    def updateSpriteImage(self, sprite, image):
+        pass
+
 
 
 # Class to contain data and actions for a PC.  Actions are added to the object

@@ -8,6 +8,7 @@ from scene import Scene
 from database import DataLoader
 from graphics import AnimatedTile, PanoramaLayer, TilemapLayer, SpriteLayer, Sprite, Accessory
 from event import EventSetInput
+from character import Actor
 
 #TODO - need to load sprites, apply accessory, pass to resource manager
 #TODO - need to load actors, pass to resource manager, add to level
@@ -31,7 +32,7 @@ class Game:
         self.scene = None
         self.running = True
 
-    def loadScene(self, eventLoadScene):
+    def loadScene(self, eventLoadScene): #TODO - this function may contain too much work, pass work to other classes create a manager class
         self.unloadScene()
         self.addEvent(EventSetInput(INPTYPE_NORMAL))
         self.dataLoader.setLevelId(eventLoadScene.levelIndex)
@@ -113,7 +114,7 @@ class Game:
         #TODO - verify git repo
 
 
-    def addActor(self, actorId, location = (0,0), direction = 0, isFocus = False):
+    def addActor(self, actorId, position = (0,0), direction = 0, isFocus = False): #TODO move logic into resourceManager?
         #TODO Note: check to see if loaded in resource manager first?
         actorData = self.dataLoader.loadActorData(actorId)
         sprites =dict()
@@ -127,25 +128,40 @@ class Game:
             accessories = list() #to contain the objects
             for accessoryData in accessoryDatas:
                 positionData = self.dataLoader.loadAccessoryPositionData(spriteData['id'], accessoryData['id'])
-                accessories.append(Accessory(accessoryData['id'],
-                                             accessoryData['name'],
-                                             accessoryData['coordinates'],
-                                             positionData['coordinates']))
+                accessoryImagePath = self.dataLoader.loadAccessoryImagePath(accessoryData['id'])
+                accessory = Accessory(accessoryData['id'],
+                                      accessoryData['name'],
+                                      accessoryData['coordinates'],
+                                      positionData['coordinates'],
+                                      self.resourceManager.loadAccessory(accessoryImagePath))
+                accessories.append(accessory)
 
+            spriteImagePath = self.dataLoader.loadSpriteImagePath(spriteData['id'])
             sprites[key] = Sprite(spriteData['id'],
                                   spriteData['name'],
                                   spriteData['coordinates'],
                                   accessories,
+                                  self.resourceManager.loadSprite(spriteImagePath),
                                   spriteData['fps'])
 
-            sprites[key].img = self.resourceManager.loadSprite('filepath wont work for this')
-            #TODO load the sprite and accessory filenames, use resource to load the image, figure out how to combine the image
-                #and return the combined image back to sprite.  All loaded sprites, accessores, and combined images stored by resource manager
+        actor = Actor(actorData['id'],
+                      actorData['name'],
+                      sprites,
+                      actorData['size'],
+                      position,
+                      direction,
+                      isFocus)
 
+        for key, sprite in actor.sprites:
+            spriteHash = sprite.getSpriteHash()
+            if not self.resourceManager.loadCombinedSprite(spriteHash):
+                imageBuffers = actor.generateSpriteLayers(sprite)
+                combinedSpriteImage = self.renderManager.createSprite(sprite, imageBuffers)
+                self.resourceManager.addCombinedSprite(combinedSpriteImage, spriteHash)
 
+            actor.updateSpriteImage(sprite, self.resourceManager.loadCombinedSprite(spriteHash))
 
-
-
+        self.resourceManager.actors.append(actor) #TODO - probably will encapusulate the aboe somehow into an add actor method
 
 
 

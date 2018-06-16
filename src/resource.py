@@ -40,8 +40,12 @@ class ResourceManager:
     def loadAccessory(self, filepath):
         pass
 
-    #keeps track of combined sprite images
-    #need to think of which object should perform the combonation of the sprite image
-    #usea MD5 hash as a lookup for the combined filepaths of sprite+accessorys
-    def loadCombinedSprite(self, sprite, spriteFilepath, accessory, accessoryFilepaths):
-        pass
+    #returns a combined sprite image if exists
+    def loadCombinedSprite(self, spriteHash):
+        image = self.combinedSprites.get(spriteHash)
+        if image is None:
+            return False
+        return image
+
+    def addCombinedSprite(self, combinedSprite, spriteHash):
+        self.combinedSprites[spriteHash] = combinedSprite
