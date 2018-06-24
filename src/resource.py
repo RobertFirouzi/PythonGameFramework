@@ -49,3 +49,8 @@ class ResourceManager:
 
     def addCombinedSprite(self, combinedSprite, spriteHash):
         self.combinedSprites[spriteHash] = combinedSprite
+
+    def addActor(self, actor):
+        current = self.actors.get(actor.id)
+        if current is None:
+            self.actors[actor.id] = actor

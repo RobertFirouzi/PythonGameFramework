@@ -68,6 +68,7 @@ PanoramaLayer
 {
 'layerType' : <string>
 'id' : <Integer>
+'panorama_id' : <Integer>
 'name' : <String>
 'isNeedsSorting' : <Bool>
 'isAlpha' : <Bool>
@@ -83,6 +84,7 @@ Tilemaplayer / spriteLayer (sprite layer will have actors added from the level d
 {
 'layerType' : <string>
 'id' : <Integer>
+'tilemap_id' : <Integer>
 'name' : <String>
 'isNeedsSorting : <Bool>
 'isAlpha' : <Bool>
@@ -173,18 +175,7 @@ class DataLoader:
 
     def setLevelId(self, id):
         self.currentLevelId = id
-        if id<10:
-            self.levelPath = LEVELS_DIRECTORY+'00000'+str(id)+'\\'
-        elif id<100:
-            self.levelPath = LEVELS_DIRECTORY+'0000'+str(id)+'\\'
-        elif id<1000:
-            self.levelPath = LEVELS_DIRECTORY+'000'+str(id)+'\\'
-        elif id<10000:
-            self.levelPath = LEVELS_DIRECTORY+'00'+str(id)+'\\'
-        elif id<100000:
-            self.levelPath = LEVELS_DIRECTORY+'0'+str(id)+'\\'
-        else:
-            self.levelPath = LEVELS_DIRECTORY+str(id)+'\\'
+        self.levelPath = LEVELS_DIRECTORY + _idToString(id) + '\\'
 
     def loadLevelData(self): #retuns the level_data json for the loaded level path
         file = open(self.levelPath+'level_data.json')
@@ -205,13 +196,8 @@ class DataLoader:
         return renderLayers
 
     #TODO - the image files need their own directory outside of the level directory!
-    def loadPanoramicImagePaths(self, id): #returns the list of panorama paths for the layer id
-        if id<10:
-            directory = self.levelPath + 'panorama\\00'+str(id)+'\\'
-        elif id<100:
-            directory = self.levelPath + 'panorama\\0'+str(id)+'\\'
-        else:
-            directory = self.levelPath + 'panorama\\'+str(id)+'\\'
+    def loadPanoramicImagePaths(self, panorama_id): #returns the list of panorama paths for the layer id
+        directory = 'dir_panorama\\' + _idToString(panorama_id) + '\\'
 
         files = os.listdir(directory)
         imagePaths = list()
@@ -222,34 +208,21 @@ class DataLoader:
         return imagePaths
 
     #TODO - the image files need their own directory outside of the level directory!
-    def loadTileImagePath(self, id): #returns an empty string or the path to tilemap image
-        directory = self.levelPath + 'tilemap\\'
+    def loadTileImagePath(self, tilemap_id): #returns an empty string or the path to tilemap image
+        directory = 'dir_tilemap\\'
         files = os.listdir(directory)
         tileImagePath = ''
 
         for file in files:
             index = int(file.split('.')[0]) #split of extension and convert to an id int
-            if index == id:
+            if index == tilemap_id:
                 tileImagePath = directory+file
                 break
 
         return tileImagePath
 
     def loadSpriteImagePath(self, id): #returns an empty string or the path to tilemap image
-        directory = 'dir_sprites\\'
-
-        if id<10:
-            spriteImageDirectory = directory+'00000'+str(id)+'\\'
-        elif id<100:
-            spriteImageDirectory = directory+'0000'+str(id)+'\\'
-        elif id<1000:
-            spriteImageDirectory = directory+'000'+str(id)+'\\'
-        elif id<10000:
-            spriteImageDirectory = directory+'00'+str(id)+'\\'
-        elif id<100000:
-            spriteImageDirectory = directory+'0'+str(id)+'\\'
-        else:
-            spriteImageDirectory = directory+str(id)+'\\'
+        spriteImageDirectory = 'dir_sprites\\' + _idToString(id) + '\\'
 
         files = os.listdir(spriteImageDirectory)
 
@@ -258,20 +231,7 @@ class DataLoader:
                 return spriteImageDirectory+file
 
     def loadAccessoryImagePath(self, id): #returns an empty string or the path to tilemap image
-        directory = 'dir_accessory\\'
-
-        if id<10:
-            accessoryImageDirectory = directory+'00000'+str(id)+'\\'
-        elif id<100:
-            accessoryImageDirectory = directory+'0000'+str(id)+'\\'
-        elif id<1000:
-            accessoryImageDirectory = directory+'000'+str(id)+'\\'
-        elif id<10000:
-            accessoryImageDirectory = directory+'00'+str(id)+'\\'
-        elif id<100000:
-            accessoryImageDirectory = directory+'0'+str(id)+'\\'
-        else:
-            accessoryImageDirectory = directory+str(id)+'\\'
+        accessoryImageDirectory = 'dir_accessory\\' + _idToString(id) + '\\'
 
         files = os.listdir(accessoryImageDirectory)
 
@@ -280,7 +240,7 @@ class DataLoader:
                 return accessoryImageDirectory+file
 
     def loadTilemapData(self, id): #returns the array of tileData (used for animatedTile objects)
-        directory = self.levelPath + 'tiles\\'
+        directory = self.levelPath + 'tilemap_data\\'
         files = os.listdir(directory)
 
         for file in files:
@@ -308,20 +268,7 @@ class DataLoader:
         return borderData
 
     def loadActorData(self, id):
-        directory = 'dir_actors\\'
-
-        if id<10:
-            file = directory+'00000'+str(id)+'.json'
-        elif id<100:
-            file = directory+'0000'+str(id)+'.json'
-        elif id<1000:
-            file = directory+'000'+str(id)+'.json'
-        elif id<10000:
-            file = directory+'00'+str(id)+'.json'
-        elif id<100000:
-            file = directory+'0'+str(id)+'.json'
-        else:
-            file = directory+str(id)+'.json'
+        file = 'dir_actors\\' + _idToString(id)+'.json'
 
         fp = open(file, 'r')
         actorData = json.load(fp)
@@ -330,19 +277,7 @@ class DataLoader:
         return actorData
 
     def loadSpriteData(self, id):
-        spritePath = 'dir_sprites\\'
-        if id<10:
-            directory = spritePath+'00000'+str(id)+'\\'
-        elif id<100:
-            directory = spritePath+'0000'+str(id)+'\\'
-        elif id<1000:
-            directory = spritePath+'000'+str(id)+'\\'
-        elif id<10000:
-            directory = spritePath+'00'+str(id)+'\\'
-        elif id<100000:
-            directory = spritePath+'0'+str(id)+'\\'
-        else:
-            directory = spritePath+str(id)+'\\'
+        directory = 'dir_sprites\\' + _idToString(id)+'\\'
 
         file = open(directory+'sprite_data.json')
         spriteData = json.load(file)
@@ -351,19 +286,7 @@ class DataLoader:
         return spriteData
 
     def loadAccessoryData(self, id):
-        accessoryPath = 'dir_accessory\\'
-        if id<10:
-            directory = accessoryPath+'00000'+str(id)+'\\'
-        elif id<100:
-            directory = accessoryPath+'0000'+str(id)+'\\'
-        elif id<1000:
-            directory = accessoryPath+'000'+str(id)+'\\'
-        elif id<10000:
-            directory = accessoryPath+'00'+str(id)+'\\'
-        elif id<100000:
-            directory = accessoryPath+'0'+str(id)+'\\'
-        else:
-            directory = accessoryPath+str(id)+'\\'
+        directory = 'dir_accessory\\'+_idToString(id)+'\\'
 
         file = open(directory+'accessory_data.json')
         accessoryData = json.load(file)
@@ -375,31 +298,8 @@ class DataLoader:
     def loadAccessoryPositionData(self, spriteId, accessoryId):
         spritePath = 'dir_sprites\\'
 
-        if spriteId < 10:
-            accessoryPath = spritePath + '00000' + str(id) + '\\accessories\\'
-        elif spriteId < 100:
-            accessoryPath = spritePath + '0000' + str(id) + '\\accessories\\'
-        elif spriteId < 1000:
-            accessoryPath = spritePath + '000' + str(id) + '\\accessories\\'
-        elif spriteId < 10000:
-            accessoryPath = spritePath + '00' + str(id) + '\\accessories\\'
-        elif spriteId < 100000:
-            accessoryPath = spritePath + '0' + str(id) + '\\accessories\\'
-        else:
-            accessoryPath = spritePath + str(id) + '\\accessories\\'
-
-        if accessoryId<10:
-            file = accessoryPath + '00000'+str(id)+'.json'
-        elif accessoryId<100:
-            file = accessoryPath + '0000' + str(id) + '.json'
-        elif accessoryId<1000:
-            file = accessoryPath + '000' + str(id) + '.json'
-        elif accessoryId<10000:
-            file = accessoryPath + '00' + str(id) + '.json'
-        elif accessoryId<100000:
-            file = accessoryPath + '0' + str(id) + '.json'
-        else:
-            file = accessoryPath + str(id) + '.json'
+        accessoryPath = spritePath + _idToString(spriteId) + '\\accessories\\'
+        file = accessoryPath + _idToString(accessoryId) + '.json'
 
         fp = open(file, 'r')
 
@@ -409,10 +309,22 @@ class DataLoader:
         return accessoryPostionData
 
 
+def _idToString(id):
+    if id < 10:
+        return '00000' + str(id)
+    elif id < 100:
+        return '0000' + str(id)
+    elif id < 1000:
+        return '000' + str(id)
+    elif id < 10000:
+        return '00' + str(id)
+    elif id < 100000:
+        return '0' + str(id)
+    else:
+        return str(id)
+
 
 '''
-
-
 actor json
 "id" : <int>,
 "name" : <string>,

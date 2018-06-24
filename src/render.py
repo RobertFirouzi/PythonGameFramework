@@ -5,6 +5,9 @@ class RenderManager:
     def render(self):
         pass
 
+    def createSprite(self, sprite, imageBuffers):
+        pass
+
 class Renderer:
     def __init__(self):
         pass

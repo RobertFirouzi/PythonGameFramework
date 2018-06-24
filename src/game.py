@@ -42,7 +42,7 @@ class Game:
         renderLayers = list()
         for layer in renderLayerDatas:
             if layer['layerType'] == 'panorama':
-                panoramaImagePaths = self.dataLoader.loadPanoramicImagePaths(layer['id'])
+                panoramaImagePaths = self.dataLoader.loadPanoramicImagePaths(layer['panorama_id'])
                 panoramicImages = list()
                 for imagePath in panoramaImagePaths:
                     panoramicImages.append(self.resourceManager.loadPanorama(imagePath, layer['isAlpha']))
@@ -62,7 +62,7 @@ class Game:
 
 
             elif layer['layerType'] == 'tilemap' or layer['layerType'] == 'sprite':
-                tileImagePath = self.dataLoader.loadTileImagePath(layer['id'])
+                tileImagePath = self.dataLoader.loadTileImagePath(layer['tilemap_id'])
                 tileData = self.dataLoader.loadTilemapData(layer['id'])
 
                 animatedTiles = list()
@@ -111,10 +111,9 @@ class Game:
                            list()) #TODO actors
 
         #TODO - pass render layers to rendermanager
-        #TODO - verify git repo
 
 
-    def addActor(self, actorId, position = (0,0), direction = 0, isFocus = False): #TODO move logic into resourceManager?
+    def loadActor(self, actorId, position = (0,0), direction = 0, isFocus = False):
         #TODO Note: check to see if loaded in resource manager first?
         actorData = self.dataLoader.loadActorData(actorId)
         sprites =dict()
@@ -161,9 +160,7 @@ class Game:
 
             actor.updateSpriteImage(sprite, self.resourceManager.loadCombinedSprite(spriteHash))
 
-        self.resourceManager.actors.append(actor) #TODO - probably will encapusulate the aboe somehow into an add actor method
-
-
+        self.resourceManager.addActor(actor)
 
     def loadMenu(self, menuFile):
         self.unloadScene()
