@@ -1,6 +1,5 @@
 import pygame
-import hashlib
-#TODO - hash the filenames to lookup in dict?
+from database import DataLoader
 
 class ResourceManager:
     def __init__(self):
@@ -54,3 +53,71 @@ class ResourceManager:
         current = self.actors.get(actor.id)
         if current is None:
             self.actors[actor.id] = actor
+
+class LoaderBase:
+    def __init_(self):
+        pass
+
+class SceneLoader(LoaderBase):
+    def __init__(self):
+        super(SceneLoader, self).__init__()
+
+    def loadScene(self, sceneId):
+        return None
+
+
+class PanoramaLoader(LoaderBase):
+    def __init__(self):
+        super(PanoramaLoader, self).__init__()
+
+    def loadPanorama(self, panoramaId):
+        return None
+
+
+class TilemapLoader(LoaderBase):
+    def __init__(self):
+        super(TilemapLoader, self).__init__()
+
+    def loadTilemap(self, tilemapId):
+        return None
+
+
+class ActorLoader(LoaderBase):
+    def __init__(self):
+        super(ActorLoader, self).__init__()
+
+    def loadActor(self, actorId):
+        return None
+
+
+class SpriteLoader(LoaderBase):
+    def __init__(self):
+        super(SpriteLoader, self).__init__()
+
+    def loadSprite(self, spriteId):
+        return None
+
+class ResourceLoader:
+    def __init__(self, resourceManager = None):
+        self.resourceManager = resourceManager
+
+        self.sceneLoader = SceneLoader(),
+        self.panoramaLoader = PanoramaLoader(),
+        self.tilemapLoader = TilemapLoader(),
+        self.actorLoader = ActorLoader(),
+        self.spriteLoader = SpriteLoader(),
+
+    def loadScene(self, sceneId):
+        return self.sceneLoader.loadScene(sceneId)
+
+    def loadActor(self, actorId):
+        return self.actorLoader.loadActor(actorId)
+
+    def loadPanorama(self, panoramaId):
+        return self.panoramaLoader.loadPanorama(panoramaId)
+
+    def loadTilemap(self, tilemapId):
+        return self.tilemapLoader.loadTilemap(tilemapId)
+
+    def loadSprite(self, spriteId):
+        return self.spriteLoader.loadSprite(spriteId)

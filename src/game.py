@@ -3,7 +3,7 @@ from render import RenderManager
 from parameters import *
 from setup import eventHandlerFactory, playerFactory, soundPlayerFactory
 from input import InputHandler, ButtonMap
-from resource import ResourceManager
+from resource import ResourceManager, ResourceLoader
 from scene import Scene
 from database import DataLoader
 from graphics import AnimatedTile, PanoramaLayer, TilemapLayer, SpriteLayer, Sprite, Accessory
@@ -22,7 +22,7 @@ class Game:
         self.player = playerFactory()
         self.renderManager = RenderManager()
         self.resourceManager = ResourceManager()
-        self.dataLoader = DataLoader()
+        self.resourceLoader = ResourceLoader(self.resourceManager)
         self.eventHandler = eventHandlerFactory(self)
         self.inputHandler = InputHandler(self, self.player, ButtonMap())
         self.musicHandler, self.soundEffectHandler = soundPlayerFactory()
@@ -36,11 +36,12 @@ class Game:
         self.unloadScene()
         self.addEvent(EventSetInput(INPTYPE_NORMAL))
         self.dataLoader.setLevelId(eventLoadScene.levelIndex)
-        levelData = self.dataLoader.loadLevelData()
+        levelData = self.dataLoader.loadLevelData()  #TODO - move loading data logic into ResourceLoader
         renderLayerDatas = self.dataLoader.loadRenderLayers()
 
         renderLayers = list()
         for layer in renderLayerDatas:
+
             if layer['layerType'] == 'panorama':
                 panoramaImagePaths = self.dataLoader.loadPanoramicImagePaths(layer['panorama_id'])
                 panoramicImages = list()
@@ -58,8 +59,6 @@ class Game:
                                                layer['motion_pps'])
 
                 renderLayers.append(panoramicLayer)
-
-
 
             elif layer['layerType'] == 'tilemap' or layer['layerType'] == 'sprite':
                 tileImagePath = self.dataLoader.loadTileImagePath(layer['tilemap_id'])
