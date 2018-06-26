@@ -13,7 +13,7 @@ class ResourceManager:
         self.soundEffects = dict()
         self.ambientTracks = dict()
 
-    def loadPanorama(self, filepath, isAlpha):
+    def loadPanoramaImage(self, filepath, isAlpha):
         image = self.panoramaImages.get(filepath)
         if image is None:
             if isAlpha:
@@ -23,7 +23,7 @@ class ResourceManager:
             self.panoramaImages[filepath] = image
         return image
 
-    def loadTilemap(self, filepath, isAlpha):
+    def loadTilemapImage(self, filepath, isAlpha):
         image = self.tilemapImages.get(filepath)
         if image is None:
             if isAlpha:
@@ -33,10 +33,10 @@ class ResourceManager:
             self.tilemapImages[filepath] = image
         return image
 
-    def loadSprite(self, filepath):
+    def loadSpriteImage(self, filepath):
         pass
 
-    def loadAccessory(self, filepath):
+    def loadAccessoryImage(self, filepath):
         pass
 
     #returns a combined sprite image if exists
@@ -58,66 +58,95 @@ class LoaderBase:
     def __init_(self):
         pass
 
-class SceneLoader(LoaderBase):
-    def __init__(self):
-        super(SceneLoader, self).__init__()
-
-    def loadScene(self, sceneId):
-        return None
-
+    def loadResource(self, resourceId):
+        pass
 
 class PanoramaLoader(LoaderBase):
     def __init__(self):
         super(PanoramaLoader, self).__init__()
 
-    def loadPanorama(self, panoramaId):
-        return None
+    def loadResource(self, resourceId):
+        pass
 
 
 class TilemapLoader(LoaderBase):
     def __init__(self):
         super(TilemapLoader, self).__init__()
 
-    def loadTilemap(self, tilemapId):
-        return None
+    def loadResource(self, resourceId):
+        pass
 
 
 class ActorLoader(LoaderBase):
     def __init__(self):
         super(ActorLoader, self).__init__()
 
-    def loadActor(self, actorId):
-        return None
+    def loadResource(self, resourceId):
+        pass
 
 
 class SpriteLoader(LoaderBase):
     def __init__(self):
         super(SpriteLoader, self).__init__()
 
-    def loadSprite(self, spriteId):
-        return None
+    def loadResource(self, resourceId):
+        pass
+
+class RenderLayerLoader(LoaderBase):
+    def __init__(self):
+        super(RenderLayerLoader, self).__init__()
+
+    def loadResource(self, resourceId):
+        pass
+
+class TilemapLayerLoader(RenderLayerLoader):
+    def __init__(self):
+        super(TilemapLayerLoader, self).__init__()
+
+    def loadResource(self, resourceId):
+        pass
+
+class PanoramaLayerLoader(RenderLayerLoader):
+    def __init__(self):
+        super(PanoramaLayerLoader, self).__init__()
+
+    def loadResource(self, resourceId):
+        pass
+
+class SpriteLayerLoader(RenderLayerLoader):
+    def __init__(self):
+        super(SpriteLayerLoader, self).__init__()
+
+    def loadResource(self, resourceId):
+        pass
+
 
 class ResourceLoader:
     def __init__(self, resourceManager = None):
         self.resourceManager = resourceManager
 
-        self.sceneLoader = SceneLoader(),
-        self.panoramaLoader = PanoramaLoader(),
-        self.tilemapLoader = TilemapLoader(),
-        self.actorLoader = ActorLoader(),
-        self.spriteLoader = SpriteLoader(),
+        self.panoramaLoader = PanoramaLoader()
+        self.tilemapLoader = TilemapLoader()
+        self.actorLoader = ActorLoader()
+        self.spriteLoader = SpriteLoader()
+        self.tilemapLayerLoader = TilemapLayerLoader()
+        self.panoramaLayerLoader = PanoramaLayerLoader()
+        self.spriteLayerLoader = SpriteLayerLoader()
 
     def loadScene(self, sceneId):
-        return self.sceneLoader.loadScene(sceneId)
+        return None
 
     def loadActor(self, actorId):
-        return self.actorLoader.loadActor(actorId)
+        return self.actorLoader.loadResource(actorId)
 
     def loadPanorama(self, panoramaId):
-        return self.panoramaLoader.loadPanorama(panoramaId)
+        return self.panoramaLoader.loadResource(panoramaId)
 
     def loadTilemap(self, tilemapId):
-        return self.tilemapLoader.loadTilemap(tilemapId)
+        return self.tilemapLoader.loadResource(tilemapId)
 
     def loadSprite(self, spriteId):
-        return self.spriteLoader.loadSprite(spriteId)
+        return self.spriteLoader.loadResource(spriteId)
+
+    def loadLayer(self, layerId):
+        pass
