@@ -5,10 +5,11 @@ from setup import eventHandlerFactory, playerFactory, soundPlayerFactory
 from input import InputHandler, ButtonMap
 from resource import ResourceManager, ResourceLoader
 from scene import Scene
-from database import DataLoader
 from graphics import AnimatedTile, PanoramaLayer, TilemapLayer, SpriteLayer, Sprite, Accessory
 from event import EventSetInput
 from character import Actor
+
+#TODO - Next task - copy the level data loading code into the resourceLoader methods
 
 #TODO - need to load sprites, apply accessory, pass to resource manager
 #TODO - need to load actors, pass to resource manager, add to level

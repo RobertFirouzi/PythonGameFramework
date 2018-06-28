@@ -166,147 +166,143 @@ accessory data json
 
 import json
 import os
-LEVELS_DIRECTORY = 'dir_levels\\'
 
-class DataLoader:
-    def __init__(self): #sets the path to the folder for this level
-        self.currentLevelId = 0
-        self.levelPath = ''
+DIR_LEVELS = 'dir_levels\\'
+DIR_ACCESSORY = 'dir_accessory\\'
+DIR_PANORAMA = 'dir_panorama\\'
+DIR_SPRITES = 'dir_sprites\\'
+DIR_TILEMAP = 'dir_tilemap\\'
+DIR_ACTORS = 'dir_actors\\'
 
-    def setLevelId(self, id):
-        self.currentLevelId = id
-        self.levelPath = LEVELS_DIRECTORY + _idToString(id) + '\\'
+def loadSceneData(sceneId): #retuns the level_data json for the loaded level path
+    directory = DIR_LEVELS + _idToString(sceneId) + '\\'
+    file = open(directory+'level_data.json')
+    level_data = json.load(file)
+    file.close()
+    return level_data
 
-    def loadLevelData(self): #retuns the level_data json for the loaded level path
-        file = open(self.levelPath+'level_data.json')
-        level_data = json.load(file)
-        file.close()
-        return level_data
+def loadRenderLayers(sceneId): #returns all of the render layer jsons from levelpath
+    directory = DIR_LEVELS + _idToString(sceneId) + '\\render_layers\\'
+    files = os.listdir(directory)
+    renderLayers = list()
 
-    def loadRenderLayers(self): #returns all of the render layer jsons from levelpath
-        directory = self.levelPath+'render_layers\\'
-        files = os.listdir(directory)
-        renderLayers = list()
+    for file in files:
+        fp = open(directory+file, 'r')
+        renderLayers.append(json.load(fp))
+        fp.close()
 
-        for file in files:
+    return renderLayers
+
+#TODO - the image files need their own directory outside of the level directory!
+def loadPanoramicImagePaths(panoramaId): #returns the list of panorama paths for the layer id
+    directory = DIR_PANORAMA + _idToString(panoramaId) + '\\'
+
+    files = os.listdir(directory)
+    imagePaths = list()
+
+    for file in files:
+        imagePaths.append(directory+file)
+
+    return imagePaths
+
+#TODO - the image files need their own directory outside of the level directory!
+def loadTileImagePath(tilemapId): #returns an empty string or the path to tilemap image
+    directory = DIR_TILEMAP
+    files = os.listdir(directory)
+    tileImagePath = ''
+
+    for file in files:
+        index = int(file.split('.')[0]) #split of extension and convert to an id int
+        if index == tilemapId:
+            tileImagePath = directory+file
+            break
+
+    return tileImagePath
+
+def loadSpriteImagePath(spriteId): #returns an empty string or the path to tilemap image
+    spriteImageDirectory = DIR_SPRITES + _idToString(spriteId) + '\\'
+
+    files = os.listdir(spriteImageDirectory)
+
+    for file in files:
+        if file.split('.')[0] == 'img':
+            return spriteImageDirectory+file
+
+def loadAccessoryImagePath(accessoryId): #returns an empty string or the path to tilemap image
+    accessoryImageDirectory = DIR_ACCESSORY + _idToString(accessoryId) + '\\'
+
+    files = os.listdir(accessoryImageDirectory)
+
+    for file in files:
+        if file.split('.')[0] == 'img':
+            return accessoryImageDirectory+file
+
+def loadTilemapData(sceneId, tilemapId): #returns the array of tileData (used for animatedTile objects)
+    directory = DIR_LEVELS + _idToString(sceneId) + '\\tilemap_data\\'
+    files = os.listdir(directory)
+
+    for file in files:
+        index = int(file.replace('.json',''))
+        if index == tilemapId:
             fp = open(directory+file, 'r')
-            renderLayers.append(json.load(fp))
+            tileData= json.load(fp)
             fp.close()
+            return tileData
 
-        return renderLayers
+    return list() #no tiledata return empty list
 
-    #TODO - the image files need their own directory outside of the level directory!
-    def loadPanoramicImagePaths(self, panorama_id): #returns the list of panorama paths for the layer id
-        directory = 'dir_panorama\\' + _idToString(panorama_id) + '\\'
+def loadBorders(sceneId):
+    directory = DIR_LEVELS + _idToString(sceneId) + '\\border\\'
+    borderData = dict()
+    files = os.listdir(directory)
 
-        files = os.listdir(directory)
-        imagePaths = list()
-
-        for file in files:
-            imagePaths.append(directory+file)
-
-        return imagePaths
-
-    #TODO - the image files need their own directory outside of the level directory!
-    def loadTileImagePath(self, tilemap_id): #returns an empty string or the path to tilemap image
-        directory = 'dir_tilemap\\'
-        files = os.listdir(directory)
-        tileImagePath = ''
-
-        for file in files:
-            index = int(file.split('.')[0]) #split of extension and convert to an id int
-            if index == tilemap_id:
-                tileImagePath = directory+file
-                break
-
-        return tileImagePath
-
-    def loadSpriteImagePath(self, id): #returns an empty string or the path to tilemap image
-        spriteImageDirectory = 'dir_sprites\\' + _idToString(id) + '\\'
-
-        files = os.listdir(spriteImageDirectory)
-
-        for file in files:
-            if file.split('.')[0] == 'img':
-                return spriteImageDirectory+file
-
-    def loadAccessoryImagePath(self, id): #returns an empty string or the path to tilemap image
-        accessoryImageDirectory = 'dir_accessory\\' + _idToString(id) + '\\'
-
-        files = os.listdir(accessoryImageDirectory)
-
-        for file in files:
-            if file.split('.')[0] == 'img':
-                return accessoryImageDirectory+file
-
-    def loadTilemapData(self, id): #returns the array of tileData (used for animatedTile objects)
-        directory = self.levelPath + 'tilemap_data\\'
-        files = os.listdir(directory)
-
-        for file in files:
-            index = int(file.replace('.json',''))
-            if index == id:
-                fp = open(directory+file, 'r')
-                tileData= json.load(fp)
-                fp.close()
-                return tileData
-
-        return list() #no tiledata return empty list
-
-    def loadBorders(self):
-        directory = self.levelPath + 'border\\'
-        borderData = dict()
-        files = os.listdir(directory)
-
-        for file in files:
-            index = int(file.replace('.json',''))
-            fp = open(directory + file, 'r')
-            border = json.load(fp)
-            fp.close()
-            borderData[index] = border
-
-        return borderData
-
-    def loadActorData(self, id):
-        file = 'dir_actors\\' + _idToString(id)+'.json'
-
-        fp = open(file, 'r')
-        actorData = json.load(fp)
+    for file in files:
+        index = int(file.replace('.json',''))
+        fp = open(directory + file, 'r')
+        border = json.load(fp)
         fp.close()
+        borderData[index] = border
 
-        return actorData
+    return borderData
 
-    def loadSpriteData(self, id):
-        directory = 'dir_sprites\\' + _idToString(id)+'\\'
+def loadActorData(actorId):
+    file = DIR_ACTORS + _idToString(actorId)+'.json'
 
-        file = open(directory+'sprite_data.json')
-        spriteData = json.load(file)
-        file.close()
+    fp = open(file, 'r')
+    actorData = json.load(fp)
+    fp.close()
 
-        return spriteData
+    return actorData
 
-    def loadAccessoryData(self, id):
-        directory = 'dir_accessory\\'+_idToString(id)+'\\'
+def loadSpriteData(spriteId):
+    directory = DIR_SPRITES + _idToString(spriteId)+'\\'
 
-        file = open(directory+'accessory_data.json')
-        accessoryData = json.load(file)
-        file.close()
+    file = open(directory+'sprite_data.json')
+    spriteData = json.load(file)
+    file.close()
 
-        return accessoryData
+    return spriteData
 
-    #TODO - need to check if this data exists somewhere in the code (higher level call?)
-    def loadAccessoryPositionData(self, spriteId, accessoryId):
-        spritePath = 'dir_sprites\\'
+def loadAccessoryData(accessoryId):
+    directory = DIR_ACCESSORY +_idToString(accessoryId)+'\\'
 
-        accessoryPath = spritePath + _idToString(spriteId) + '\\accessories\\'
-        file = accessoryPath + _idToString(accessoryId) + '.json'
+    file = open(directory+'accessory_data.json')
+    accessoryData = json.load(file)
+    file.close()
 
-        fp = open(file, 'r')
+    return accessoryData
 
-        accessoryPostionData = json.load(fp)
-        fp.close()
+#TODO - need to check if this data exists somewhere in the code (higher level call?)
+def loadAccessoryPositionData(spriteId, accessoryId):
+    accessoryPath = DIR_SPRITES + _idToString(spriteId) + '\\accessories\\'
+    file = accessoryPath + _idToString(accessoryId) + '.json'
 
-        return accessoryPostionData
+    fp = open(file, 'r')
+
+    accessoryPostionData = json.load(fp)
+    fp.close()
+
+    return accessoryPostionData
 
 
 def _idToString(id):
