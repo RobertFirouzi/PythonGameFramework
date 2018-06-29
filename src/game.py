@@ -36,7 +36,6 @@ class Game:
     def loadScene(self, eventLoadScene): #TODO - this function may contain too much work, pass work to other classes create a manager class
         self.unloadScene()
         self.addEvent(EventSetInput(INPTYPE_NORMAL))
-        self.dataLoader.setLevelId(eventLoadScene.levelIndex)
         levelData = self.dataLoader.loadLevelData()  #TODO - move loading data logic into ResourceLoader
         renderLayerDatas = self.dataLoader.loadRenderLayers()
 
