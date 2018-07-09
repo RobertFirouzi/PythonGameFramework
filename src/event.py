@@ -39,7 +39,7 @@ class EventSetInput(EventGeneratedBase):
         super(EventSetInput, self).__init__(eventType, params)
         self.inputType = inputType
 
-class EventLoadLevel(EventGeneratedBase):
+class EventLoadLevel(EventGeneratedBase): #TODO change "levelIndex" to levelId
     def __init__(self, levelIndex, startingPosition = (0,0), eventType = 'LOADLEVEL', params = ()):
         super(EventLoadLevel, self).__init__(eventType, params)
         self.levelIndex = levelIndex

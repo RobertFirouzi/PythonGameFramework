@@ -1,6 +1,7 @@
 import pygame
 from database import *
-from graphics import PanoramaLayer, TilemapLayer, SpriteLayer
+from graphics import PanoramaLayer, TilemapLayer, SpriteLayer, AnimatedTile
+from  scene import Scene
 
 class ResourceManager:
     def __init__(self):
@@ -95,7 +96,33 @@ class TilemapLayerLoader(RenderLayerLoader):
         super(TilemapLayerLoader, self).__init__()
 
     def loadResource(self, resourceData):
-        pass
+        tilemapImage = self._loadTilemapImage(resourceData)
+        animatedTiles = self._loadAnimatedTiles(resourceData)
+
+        return TilemapLayer(resourceData['name'],
+                            resourceData['isNeedsSorting'],
+                            resourceData['size_tiles'],
+                            resourceData['tile_size'],
+                            tilemapImage,
+                            animatedTiles)
+
+    def _loadTilemapImage(self, resourceData):
+        tileImagePath = loadTileImagePath(resourceData['tilemap_id'])  # todo change name to tilmap image id?
+        tilemapImage = None
+        if tileImagePath:
+            tilemapImage = self.resourceManager._loadTilemap(tileImagePath, resourceData['isAlpha'])
+
+        return tilemapImage
+
+    def _loadAnimatedTiles(self, resourceData):
+        tileData = loadTilemapData(resourceData['id'])
+        animatedTiles = list()
+        for i in range(len(tileData)):
+            tileRow = list()
+            for j in range(len(tileData[i])):
+                animatedTile = AnimatedTile(tileData[i][j]['index'], tileData[i][j]['fps'])
+                tileRow.append(animatedTile)
+            animatedTiles.append(tileRow)
 
 class PanoramaLayerLoader(RenderLayerLoader):
     def __init__(self):
@@ -117,14 +144,23 @@ class PanoramaLayerLoader(RenderLayerLoader):
                              resourceData['isMotion'],
                              resourceData['motion_pps'])
 
-
-class SpriteLayerLoader(RenderLayerLoader):
+class SpriteLayerLoader(TilemapLayerLoader):
     def __init__(self):
         super(SpriteLayerLoader, self).__init__()
 
-    def loadResource(self, resourceId):
-        pass
+    def loadResource(self, resourceData):
+        tilemapImage = self._loadTilemapImage(resourceData)
+        animatedTiles = self._loadAnimatedTiles(resourceData)
 
+        actors = list() #TODO
+
+        return SpriteLayer(resourceData['name'],
+                           resourceData['isNeedsSorting'],
+                           resourceData['size_tiles'],
+                           resourceData['tile_size'],
+                           tilemapImage,
+                           animatedTiles,
+                           actors)
 
 class ResourceLoader:
     def __init__(self, resourceManager = None):
@@ -143,19 +179,30 @@ class ResourceLoader:
 
         renderLayers = list()
         for layerData in renderLayerDatas:
-            renderLayers.append(self.loadLayer(layerData))
+            renderLayers.append(self._loadLayer(layerData))
+
+        borderData = loadBorders(sceneId) #{layerIndex : [[border]]}
+
+        return Scene(levelData['name'],
+                           levelData['id'],
+                           levelData['size_tiles'],
+                           renderLayers,
+                           borderData,
+                           list(), #TODO eventBoxes
+                           list(), #TODO game evenets
+                           list()) #TODO actors
 
 
     def loadActor(self, actorId):
         return self.actorLoader.loadResource(actorId)
 
-    def loadTilemap(self, tilemapId):
+    def _loadTilemap(self, tilemapId):
         return self.tilemapLoader.loadResource(tilemapId)
 
-    def loadSprite(self, spriteId):
+    def _loadSprite(self, spriteId):
         return self.spriteLoader.loadResource(spriteId)
 
-    def loadLayer(self, layerData):
+    def _loadLayer(self, layerData):
         if layerData['layerType'] == 'panorama':
             return self.panoramaLayerLoader.loadResource(layerData)
 
@@ -164,42 +211,3 @@ class ResourceLoader:
 
         elif layerData['layerType'] == 'sprite':
             return self.spriteLayerLoader.loadResource(layerData)
-
-
-        elif layer['layerType'] == 'tilemap' or layer['layerType'] == 'sprite':
-            tileImagePath = self.dataLoader.loadTileImagePath(layer['tilemap_id'])
-            tileData = self.dataLoader.loadTilemapData(layer['id'])
-
-            animatedTiles = list()
-            for i in range(len(tileData)):
-                tileRow = list()
-                for j in range(len(tileData[i])):
-                    animatedTile = AnimatedTile(tileData[i][j]['index'], tileData[i][j]['fps'])
-                    tileRow.append(animatedTile)
-                animatedTiles.append(tileRow)
-
-            tilemapImage = None
-            if tileImagePath:
-                tilemapImage = self.resourceManager.loadTilemap(tileImagePath, layer['isAlpha'])
-
-            # TODO - loadActors
-            if layer['layerType'] == 'tilemap':
-                tilemapLayer = TilemapLayer(layer['name'],
-                                            layer['isNeedsSorting'],
-                                            layer['size_tiles'],
-                                            layer['tile_size'],
-                                            tilemapImage,
-                                            animatedTiles)
-
-                renderLayers.append(tilemapLayer)
-
-            elif layer['layerType'] == 'sprite':
-                spriteLayer = SpriteLayer(layer['name'],
-                                          layer['isNeedsSorting'],
-                                          layer['size_tiles'],
-                                          layer['tile_size'],
-                                          tilemapImage,
-                                          animatedTiles,
-                                          list())
-
-                renderLayers.append(spriteLayer)

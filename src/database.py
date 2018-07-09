@@ -193,7 +193,6 @@ def loadRenderLayers(sceneId): #returns all of the render layer jsons from level
 
     return renderLayers
 
-#TODO - the image files need their own directory outside of the level directory!
 def loadPanoramicImagePaths(panoramaId): #returns the list of panorama paths for the layer id
     directory = DIR_PANORAMA + _idToString(panoramaId) + '\\'
 
@@ -205,7 +204,6 @@ def loadPanoramicImagePaths(panoramaId): #returns the list of panorama paths for
 
     return imagePaths
 
-#TODO - the image files need their own directory outside of the level directory!
 def loadTileImagePath(tilemapId): #returns an empty string or the path to tilemap image
     directory = DIR_TILEMAP
     files = os.listdir(directory)

@@ -36,79 +36,8 @@ class Game:
     def loadScene(self, eventLoadScene): #TODO - this function may contain too much work, pass work to other classes create a manager class
         self.unloadScene()
         self.addEvent(EventSetInput(INPTYPE_NORMAL))
-        levelData = self.dataLoader.loadLevelData()  #TODO - move loading data logic into ResourceLoader
-        renderLayerDatas = self.dataLoader.loadRenderLayers()
 
-        renderLayers = list()
-        for layer in renderLayerDatas:
-
-            if layer['layerType'] == 'panorama':
-                panoramaImagePaths = self.dataLoader.loadPanoramicImagePaths(layer['panorama_id'])
-                panoramicImages = list()
-                for imagePath in panoramaImagePaths:
-                    panoramicImages.append(self.resourceManager.loadPanorama(imagePath, layer['isAlpha']))
-
-                panoramicLayer = PanoramaLayer(layer['name'],
-                                               layer['isNeedsSorting'],
-                                               panoramicImages,
-                                               layer['visibleSections'],
-                                               layer['sizePx'],
-                                               layer['scrollSpeed'],
-                                               layer['fps'],
-                                               layer['isMotion'],
-                                               layer['motion_pps'])
-
-                renderLayers.append(panoramicLayer)
-
-            elif layer['layerType'] == 'tilemap' or layer['layerType'] == 'sprite':
-                tileImagePath = self.dataLoader.loadTileImagePath(layer['tilemap_id'])
-                tileData = self.dataLoader.loadTilemapData(layer['id'])
-
-                animatedTiles = list()
-                for i in range(len(tileData)):
-                    tileRow = list()
-                    for j in range(len(tileData[i])):
-                        animatedTile = AnimatedTile(tileData[i][j]['index'],tileData[i][j]['fps'])
-                        tileRow.append(animatedTile)
-                    animatedTiles.append(tileRow)
-
-                tilemapImage = None
-                if tileImagePath:
-                    tilemapImage = self.resourceManager.loadTilemap(tileImagePath, layer['isAlpha'])
-
-                #TODO - loadActors
-                if layer['layerType'] == 'tilemap':
-                    tilemapLayer = TilemapLayer(layer['name'],
-                                                layer['isNeedsSorting'],
-                                                layer['size_tiles'],
-                                                layer['tile_size'],
-                                                tilemapImage,
-                                                animatedTiles)
-
-                    renderLayers.append(tilemapLayer)
-
-                elif layer['layerType'] == 'sprite':
-                    spriteLayer = SpriteLayer(layer['name'],
-                                              layer['isNeedsSorting'],
-                                              layer['size_tiles'],
-                                              layer['tile_size'],
-                                              tilemapImage,
-                                              animatedTiles,
-                                              list())
-
-                    renderLayers.append(spriteLayer)
-
-        borderData = self.dataLoader.loadBorders() #{layerIndex : [[border]]}
-
-        self.scene = Scene(levelData['name'],
-                           levelData['id'],
-                           levelData['size_tiles'],
-                           renderLayers,
-                           borderData,
-                           list(), #TODO eventBoxes
-                           list(), #TODO game evenets
-                           list()) #TODO actors
-
+        self.scene = self.resourceLoader.loadScene(eventLoadScene.levelIndex)
         #TODO - pass render layers to rendermanager
 
 
