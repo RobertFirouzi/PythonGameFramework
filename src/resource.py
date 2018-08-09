@@ -57,7 +57,7 @@ class ResourceManager:
             self.actors[actor.id] = actor
 
 class LoaderBase:
-    def __init_(self, resourceManager):
+    def __init__(self, resourceManager):
         self.resourceManager = resourceManager
 
     def loadResource(self, resourceId):

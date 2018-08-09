@@ -40,7 +40,6 @@ class Game:
         self.scene = self.resourceLoader.loadScene(eventLoadScene.levelIndex)
         #TODO - pass render layers to rendermanager
 
-
     def loadActor(self, actorId, position = (0,0), direction = 0, isFocus = False):
         #TODO Note: check to see if loaded in resource manager first?
         actorData = self.dataLoader.loadActorData(actorId)
